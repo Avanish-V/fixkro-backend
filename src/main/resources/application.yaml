@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: zippyhand-Admin
+
+
+  datasource:
+      # 👇 Direct connection string with username and password embedded
+    url: jdbc:postgresql://db.pifgeycbjxluaubdhmhh.supabase.co:5432/postgres?user=postgres&password=yAxhHSncJ3jGrw2X
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+# Pricing configuration
+pricing:
+  tax-rate: 18.0
+  currency: INR
+  coupons-enabled: true
+
+# Cashfree Payment Gateway
+cashfree:
+  app-id: 257493c08aee5e707d618168a4394752
+  secret-key: cd1d129bca05453908452ffff5419de176aed9f7
+  api-version: 2023-08-01
+  environment: TEST
+  base-url: https://sandbox.cashfree.com/pg
