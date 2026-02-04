@@ -16,15 +16,32 @@ class ProductService(
     fun createCategory(request: CreateCategoryRequest): CategoryResponse {
         val entity = CategoryEntity(
             title = request.title,
-            image = request.image
+            iconType = request.iconType,
+            iconValue = request.iconValue,
+            themeColor = request.themeColor,
+            status = request.status
         )
         val saved = categoryRepository.save(entity)
-        return CategoryResponse(saved.categoryId, saved.title, saved.image)
+        return CategoryResponse(
+            categoryId = saved.categoryId,
+            title = saved.title,
+            iconType = saved.iconType,
+            iconValue = saved.iconValue,
+            themeColor = saved.themeColor,
+            status = saved.status
+        )
     }
 
     fun getCategories(): List<CategoryResponse> {
         return categoryRepository.findAll().map { 
-            CategoryResponse(it.categoryId, it.title, it.image) 
+            CategoryResponse(
+                categoryId = it.categoryId,
+                title = it.title,
+                iconType = it.iconType,
+                iconValue = it.iconValue,
+                themeColor = it.themeColor,
+                status = it.status
+            ) 
         }
     }
 
@@ -66,4 +83,30 @@ class ProductService(
         price = product.price,
         descriptions = product.descriptions
     )
+
+    @Transactional
+    fun updateProduct(productId: Long, request: UpdateProductRequest): ProductResponse {
+        val existing = productRepository.findById(productId)
+            .orElseThrow { NoSuchElementException("Product not found with id: $productId") }
+        
+        val updated = existing.copy(
+            categoryId = request.categoryId,
+            title = request.title,
+            image = request.imageUrl,
+            serviceType = request.serviceType,
+            status = request.status,
+            price = request.price,
+            descriptions = request.descriptions
+        )
+        val saved = productRepository.save(updated)
+        return entityToResponse(saved)
+    }
+
+    @Transactional
+    fun deleteProduct(productId: Long) {
+        if (!productRepository.existsById(productId)) {
+            throw NoSuchElementException("Product not found with id: $productId")
+        }
+        productRepository.deleteById(productId)
+    }
 }

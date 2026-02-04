@@ -18,6 +18,7 @@ class FirebaseConfig {
                 val serviceAccount = FileInputStream("src/main/resources/account.json")
                 val options = FirebaseOptions.builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                    .setStorageBucket("fixkro-237ec.firebasestorage.app")
                     .build()
                 FirebaseApp.initializeApp(options)
             } catch (e: Exception) {
@@ -25,6 +26,7 @@ class FirebaseConfig {
                 try {
                     val options = FirebaseOptions.builder()
                         .setCredentials(GoogleCredentials.getApplicationDefault())
+                        .setStorageBucket("fixkro-237ec.firebasestorage.app")
                         .build()
                     FirebaseApp.initializeApp(options)
                 } catch (ex: Exception) {

@@ -12,5 +12,12 @@ data class CategoryEntity(
     @Column(nullable = false)
     val title: String = "",
 
-    val image: String = ""
+    val iconType: String = "url", // "svg" or "url"
+    
+    @Column(length = 10000) // Increase length for large SVGs
+    val iconValue: String = "",
+
+    val themeColor: String = "#000000",
+
+    val status: String = "active"
 )

@@ -35,4 +35,15 @@ class ProductController(private val productService: ProductService) {
         return ApiResponse.success(productService.getProduct(id))
     }
 
+    @PutMapping("/product/{id}")
+    fun updateProduct(@PathVariable id: Long, @Valid @RequestBody request: UpdateProductRequest): ApiResponse<ProductResponse> {
+        return ApiResponse.success(productService.updateProduct(id, request))
+    }
+
+    @DeleteMapping("/product/{id}")
+    fun deleteProduct(@PathVariable id: Long): ApiResponse<String> {
+        productService.deleteProduct(id)
+        return ApiResponse.success("Product deleted successfully")
+    }
+
 }

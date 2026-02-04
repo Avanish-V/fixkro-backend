@@ -48,13 +48,11 @@ class GlobalExceptionHandler {
             .body(ApiResponse.Companion.error("Something went wrong", ErrorCode.INTERNAL))
     }
 
-    @ExceptionHandler(OrderNotFoundException::class)
-    fun handleOrderNotFound(ex: OrderNotFoundException): ResponseEntity<ApiResponse<Nothing>> {
-        // log.error("Unhandled exception", ex)
-
+    @ExceptionHandler(NoSuchElementException::class)
+    fun handleNotFound(ex: NoSuchElementException): ResponseEntity<ApiResponse<Nothing>> {
         return ResponseEntity
             .status(HttpStatus.NOT_FOUND)
-            .body(ApiResponse.Companion.error(ex.message ?: "Order not found", ErrorCode.NOT_FOUND))
+            .body(ApiResponse.Companion.error(ex.message ?: "Resource not found"))
     }
 
 }

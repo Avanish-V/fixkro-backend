@@ -1,6 +1,6 @@
 package com.iotabuild.zippyhand_Admin.common.response
 
-data class ApiResponse<T>(
+data class ApiResponse<out T>(
     val success: Boolean,
     val data: T? = null,
     val error: ApiError? = null
