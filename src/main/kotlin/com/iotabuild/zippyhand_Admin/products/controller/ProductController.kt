@@ -20,6 +20,11 @@ class ProductController(private val productService: ProductService) {
         return ApiResponse.success(productService.getCategories())
     }
 
+    @GetMapping("/category/{id}")
+    fun getCategoryById(@PathVariable id: Long): ApiResponse<CategoryResponse> {
+        return ApiResponse.success(productService.getCategory(id))
+    }
+
     @PostMapping("/service")
     fun createProduct(@Valid @RequestBody request: CreateProductRequest): ApiResponse<ProductResponse> {
         return ApiResponse.success(productService.createProduct(request))
@@ -28,6 +33,11 @@ class ProductController(private val productService: ProductService) {
     @GetMapping("/services")
     fun getByCategory(@RequestParam categoryId: Long): ApiResponse<List<ProductResponse>> {
         return ApiResponse.success(productService.getService(categoryId))
+    }
+
+    @GetMapping("/services/all")
+    fun getAllServices(): ApiResponse<List<ProductResponse>> {
+        return ApiResponse.success(productService.getAllServices())
     }
 
     @GetMapping("/product/{id}")

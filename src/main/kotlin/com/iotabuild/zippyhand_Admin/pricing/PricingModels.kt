@@ -12,6 +12,9 @@ data class PriceRequest(
     @field:Positive(message = "Product ID must be positive")
     val productId: Long,
     
+    @field:Positive(message = "Quantity must be positive")
+    val quantity: Int = 1,
+    
     val couponCode: String? = null
 )
 

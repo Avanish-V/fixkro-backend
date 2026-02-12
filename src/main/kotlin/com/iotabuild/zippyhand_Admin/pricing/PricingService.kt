@@ -37,8 +37,9 @@ class PricingService(
             
             logger.debug("Found product: ${product.title}, base price: ${product.price}")
             
-            // Convert price to BigDecimal for precise calculations
-            val basePrice = BigDecimal(product.price)
+            // Convert unit price to BigDecimal and multiply by quantity
+            val unitPrice = BigDecimal(product.price)
+            val basePrice = unitPrice.multiply(BigDecimal(request.quantity))
             
             // Calculate tax amount (tax rate is a percentage)
             val taxAmount = calculateTax(basePrice)

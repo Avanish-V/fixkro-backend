@@ -7,13 +7,18 @@ import java.math.BigDecimal
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "orders")
+@Table(name = "orders", indexes = [
+    Index(name = "idx_customer_id", columnList = "customerId"),
+    Index(name = "idx_order_id", columnList = "orderId", unique = true),
+    Index(name = "idx_status", columnList = "status")
+])
 class Order(
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long = 0,
-    @Column(nullable = false)
+
+    @Column(nullable = false, unique = true)
     val orderId: String,
 
     /* ---------- CUSTOMER (REFERENCE + SNAPSHOT) ---------- */
@@ -26,6 +31,7 @@ class Order(
     val fullName: String,
     val phone: String,
     val addressLine1: String,
+    val addressLine2: String? = null,
     val city: String,
     val state: String,
     val postalCode: String,
@@ -33,13 +39,14 @@ class Order(
     /* ---------- SERVICE INFO ---------- */
 
     @Column(nullable = false)
-    val productId:Long,
+    val productId: Long,
+    val productTitle: String,
     val applianceBrand: String? = null,
     val applianceModel: String? = null,
 
     /* ---------- TECHNICIAN ---------- */
 
-    val technicianId: Long? = null,
+    var technicianId: Long? = null,
 
     /* ---------- PRICING ---------- */
 
@@ -48,8 +55,9 @@ class Order(
     @Column(nullable = false)
     val tax: Int,
     val offerId: Long? = null,
+    val couponCode: String? = null,
     @Column(nullable = false)
-    val discount: Int?= null,
+    val discount: Int? = null,
     @Column(nullable = false)
     val totalAmount: Int,
 
@@ -71,16 +79,31 @@ class Order(
     /* ---------- TIMESTAMPS ---------- */
 
     val scheduledAt: String? = null,
-    val completedAt: LocalDateTime? = null,
+    var completedAt: LocalDateTime? = null,
 
     @Column(updatable = false)
     val createdAt: LocalDateTime = LocalDateTime.now(),
 
-    val updatedAt: LocalDateTime = LocalDateTime.now(),
+    var updatedAt: LocalDateTime = LocalDateTime.now(),
 
-    val cancellationReason: String? = null
+    var cancellationReason: String? = null
 
-)
+) {
+    @PreUpdate
+    fun onUpdate() {
+        updatedAt = LocalDateTime.now()
+    }
+
+    fun canTransitionTo(newStatus: OrderStatus): Boolean {
+        return when (this.status) {
+            OrderStatus.CREATED -> newStatus in listOf(OrderStatus.ASSIGNED, OrderStatus.CANCELLED)
+            OrderStatus.ASSIGNED -> newStatus in listOf(OrderStatus.IN_PROGRESS, OrderStatus.CANCELLED)
+            OrderStatus.IN_PROGRESS -> newStatus in listOf(OrderStatus.COMPLETED, OrderStatus.CANCELLED)
+            OrderStatus.COMPLETED -> false
+            OrderStatus.CANCELLED -> false
+        }
+    }
+}
 
 
 enum class OrderStatus {

@@ -6,7 +6,8 @@ data class CategoryResponse(
     val iconType: String,
     val iconValue: String,
     val themeColor: String,
-    val status: String
+    val status: String,
+    val image: String
 )
 
 data class CreateCategoryRequest(

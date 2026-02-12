@@ -55,6 +55,20 @@ class GlobalExceptionHandler {
             .body(ApiResponse.Companion.error(ex.message ?: "Resource not found"))
     }
 
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException::class)
+    fun handleAccessDenied(ex: org.springframework.security.access.AccessDeniedException): ResponseEntity<ApiResponse<Nothing>> {
+        return ResponseEntity
+            .status(HttpStatus.FORBIDDEN)
+            .body(ApiResponse.Companion.error(ex.message ?: "Access denied", ErrorCode.FORBIDDEN))
+    }
+
+    @ExceptionHandler(IllegalStateException::class)
+    fun handleIllegalState(ex: IllegalStateException): ResponseEntity<ApiResponse<Nothing>> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ApiResponse.Companion.error(ex.message ?: "Invalid operation"))
+    }
+
 }
 
 class OrderNotFoundException(orderId: Long) :

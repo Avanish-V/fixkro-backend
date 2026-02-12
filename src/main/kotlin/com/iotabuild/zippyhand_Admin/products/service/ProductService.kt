@@ -9,7 +9,8 @@ import org.springframework.stereotype.Service
 @Service
 class ProductService(
     private val productRepository: ProductRepository,
-    private val categoryRepository: CategoryRepository
+    private val categoryRepository: CategoryRepository,
+    private val reviewRepository: com.iotabuild.zippyhand_Admin.reviews.ReviewRepository
 ) {
 
     @Transactional
@@ -28,7 +29,8 @@ class ProductService(
             iconType = saved.iconType,
             iconValue = saved.iconValue,
             themeColor = saved.themeColor,
-            status = saved.status
+            status = saved.status,
+            image = saved.iconValue
         )
     }
 
@@ -40,9 +42,24 @@ class ProductService(
                 iconType = it.iconType,
                 iconValue = it.iconValue,
                 themeColor = it.themeColor,
-                status = it.status
+                status = it.status,
+                image = it.iconValue
             ) 
         }
+    }
+
+    fun getCategory(categoryId: Long): CategoryResponse {
+        val category = categoryRepository.findById(categoryId)
+            .orElseThrow { NoSuchElementException("Category not found with id: $categoryId") }
+        return CategoryResponse(
+            categoryId = category.categoryId,
+            title = category.title,
+            iconType = category.iconType,
+            iconValue = category.iconValue,
+            themeColor = category.themeColor,
+            status = category.status,
+            image = category.iconValue
+        )
     }
 
     @Transactional
@@ -67,22 +84,39 @@ class ProductService(
         }
     }
 
+    fun getAllServices(): List<ProductResponse> {
+        return productRepository.findAll().map {
+            entityToResponse(it)
+        }
+    }
+
     fun getProduct(productId: Long): ProductResponse {
         val product = productRepository.findById(productId)
             .orElseThrow { NoSuchElementException("Product not found with id: $productId") }
         return entityToResponse(product)
     }
 
-    private fun entityToResponse(product: ProductEntity): ProductResponse = ProductResponse(
-        categoryId = product.categoryId,
-        productId = product.productId,
-        title = product.title,
-        imageUrl = product.image,
-        serviceType = product.serviceType,
-        status = product.status,
-        price = product.price,
-        descriptions = product.descriptions
-    )
+    private fun entityToResponse(product: ProductEntity): ProductResponse {
+        val reviews = reviewRepository.findByProductId(product.productId)
+        val avgRating = if (reviews.isEmpty()) 0.0 else reviews.map { it.rating }.average()
+        
+        val category = categoryRepository.findById(product.categoryId).orElse(null)
+        val categoryImage = category?.iconValue ?: ""
+        
+        return ProductResponse(
+            categoryId = product.categoryId,
+            productId = product.productId,
+            title = product.title,
+            imageUrl = product.image,
+            serviceType = product.serviceType,
+            status = product.status,
+            price = product.price,
+            descriptions = product.descriptions,
+            rating = avgRating,
+            reviewCount = reviews.size,
+            categoryImage = categoryImage
+        )
+    }
 
     @Transactional
     fun updateProduct(productId: Long, request: UpdateProductRequest): ProductResponse {
@@ -129,7 +163,8 @@ class ProductService(
             iconType = saved.iconType,
             iconValue = saved.iconValue,
             themeColor = saved.themeColor,
-            status = saved.status
+            status = saved.status,
+            image = saved.iconValue
         )
     }
 

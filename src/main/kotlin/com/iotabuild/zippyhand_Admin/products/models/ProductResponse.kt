@@ -11,5 +11,8 @@ data class ProductResponse(
     val serviceType: String = "",
     val status: Boolean = false,
     val price: Int = 0,
-    val descriptions: List<ProductDescription> = emptyList()
+    val descriptions: List<ProductDescription> = emptyList(),
+    val rating: Double = 0.0,
+    val reviewCount: Int = 0,
+    val categoryImage: String = ""
 )

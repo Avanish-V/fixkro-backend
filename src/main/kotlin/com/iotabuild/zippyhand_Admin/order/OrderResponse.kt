@@ -22,18 +22,22 @@ data class OrderResponse(
     /* ---------- SERVICE INFO ---------- */
 
     val productId:Long,
+    val productTitle: String,
     val applianceBrand: String? = null,
     val applianceModel: String? = null,
 
     /* ---------- TECHNICIAN ---------- */
 
     val technicianId: Long? = null,
+    val technicianName: String? = null,
+    val technicianPhoto: String? = null,
 
     /* ---------- PRICING ---------- */
 
     val price: Int,
     val tax: Int,
     val offerId: Long? = null,
+    val couponCode: String? = null,
     val discount: Int? = null,
     val totalAmount: Int,
 

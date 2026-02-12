@@ -1,0 +1,10 @@
+# Build stage
+FROM gradle:8.5-jdk17 AS build
+COPY --chown=gradle:gradle . /home/gradle/src
+WORKDIR /home/gradle/src
+RUN gradle shadowJar --no-daemon -x test
+
+# Lambda stage
+FROM public.ecr.aws/lambda/java:21
+COPY --from=build /home/gradle/src/build/libs/*aws.jar ${LAMBDA_TASK_ROOT}/app.jar
+CMD [ "com.iotabuild.zippyhand_Admin.StreamLambdaHandler::handleRequest" ]

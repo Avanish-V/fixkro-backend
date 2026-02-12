@@ -17,6 +17,10 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
 # Pricing configuration
 pricing:
   tax-rate: 18.0

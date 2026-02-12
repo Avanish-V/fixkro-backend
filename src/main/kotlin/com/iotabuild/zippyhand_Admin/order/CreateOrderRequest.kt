@@ -7,10 +7,9 @@ import java.time.LocalDateTime
 
 
 data class OrderRequest(
-    val customerId: Int,
     val serviceAddress: Address,
     val serviceProduct: ServiceProduct,
-    val technicianId: Int?=null,
+    val technicianId: Int? = null,
     val priceDetail: PriceDetail,
     val transaction: Transaction,
     val createdAt: String,
@@ -47,6 +46,7 @@ data class Address(
     val fullName: String,
     val phone: String,
     val addressLine1: String,
+    val addressLine2: String? = null,
     val city: String,
     val state: String,
     val postalCode: String,
