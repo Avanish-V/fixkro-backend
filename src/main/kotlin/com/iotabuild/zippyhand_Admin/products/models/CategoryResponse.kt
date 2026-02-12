@@ -16,3 +16,11 @@ data class CreateCategoryRequest(
     val themeColor: String,
     val status: String
 )
+
+data class UpdateCategoryRequest(
+    val title: String,
+    val iconType: String,
+    val iconValue: String,
+    val themeColor: String,
+    val status: String
+)

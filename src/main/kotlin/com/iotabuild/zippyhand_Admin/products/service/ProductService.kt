@@ -109,4 +109,36 @@ class ProductService(
         }
         productRepository.deleteById(productId)
     }
+
+    @Transactional
+    fun updateCategory(categoryId: Long, request: UpdateCategoryRequest): CategoryResponse {
+        val existing = categoryRepository.findById(categoryId)
+            .orElseThrow { NoSuchElementException("Category not found with id: $categoryId") }
+        
+        val updated = existing.copy(
+            title = request.title,
+            iconType = request.iconType,
+            iconValue = request.iconValue,
+            themeColor = request.themeColor,
+            status = request.status
+        )
+        val saved = categoryRepository.save(updated)
+        return CategoryResponse(
+            categoryId = saved.categoryId,
+            title = saved.title,
+            iconType = saved.iconType,
+            iconValue = saved.iconValue,
+            themeColor = saved.themeColor,
+            status = saved.status
+        )
+    }
+
+    @Transactional
+    fun deleteCategory(categoryId: Long) {
+        if (!categoryRepository.existsById(categoryId)) {
+            throw NoSuchElementException("Category not found with id: $categoryId")
+        }
+        // Optional: Check if products exist in this category before deleting
+        categoryRepository.deleteById(categoryId)
+    }
 }

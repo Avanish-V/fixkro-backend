@@ -46,4 +46,15 @@ class ProductController(private val productService: ProductService) {
         return ApiResponse.success("Product deleted successfully")
     }
 
+    @PutMapping("/category/{id}")
+    fun updateCategory(@PathVariable id: Long, @Valid @RequestBody request: UpdateCategoryRequest): ApiResponse<CategoryResponse> {
+        return ApiResponse.success(productService.updateCategory(id, request))
+    }
+
+    @DeleteMapping("/category/{id}")
+    fun deleteCategory(@PathVariable id: Long): ApiResponse<String> {
+        productService.deleteCategory(id)
+        return ApiResponse.success("Category deleted successfully")
+    }
+
 }
