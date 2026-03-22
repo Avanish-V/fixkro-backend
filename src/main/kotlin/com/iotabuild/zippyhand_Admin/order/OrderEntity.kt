@@ -41,6 +41,7 @@ class Order(
     @Column(nullable = false)
     val productId: Long,
     val productTitle: String,
+    val productImage: String,
     val applianceBrand: String? = null,
     val applianceModel: String? = null,
 

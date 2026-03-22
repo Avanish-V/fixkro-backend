@@ -23,6 +23,7 @@ data class OrderResponse(
 
     val productId:Long,
     val productTitle: String,
+    val productImage: String,
     val applianceBrand: String? = null,
     val applianceModel: String? = null,
 

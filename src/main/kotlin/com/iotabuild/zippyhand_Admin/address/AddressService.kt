@@ -30,15 +30,15 @@ class AddressService(private val addressRepository: AddressRepository) {
     }
 
     @Transactional
-    fun getUserAddresses(idToken: FirebaseToken): List<AddressResponse>{
+    fun getUserAddresses(idToken: FirebaseToken?): List<AddressResponse>{
 
-        val uid = idToken.uid
+        val uid = idToken?.uid
 
-        val addresses = addressRepository.getAddressesByUserId(uid)
+        val addresses = uid?.let { addressRepository.getAddressesByUserId(it) }
 
-        return addresses.map {
+        return addresses?.map {
             it.toResponse()
-        }
+        } ?: emptyList()
     }
 
 }

@@ -1,0 +1,15 @@
+# 1. Login to AWS ECR
+aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 150916258157.dkr.ecr.ap-south-1.amazonaws.com
+
+# 2. Build the Docker image for Linux/AMD64 (required for Lambda)
+docker build --platform linux/amd64 -t zippyhand-admin -f Dockerfile.lambda .
+
+# 3. Tag the image for ECR
+docker tag zippyhand-admin:latest 150916258157.dkr.ecr.ap-south-1.amazonaws.com/fixkro_image:latest
+
+# 4. Push the image to ECR
+docker push 150916258157.dkr.ecr.ap-south-1.amazonaws.com/fixkro_image:latest
+
+# 5. (Optional) Update the Lambda function to use the new image
+# Replace <YOUR_LAMBDA_FUNCTION_NAME> with your actual function name
+# aws lambda update-function-code --function-name <YOUR_LAMBDA_FUNCTION_NAME> --image-uri 150916258157.dkr.ecr.ap-south-1.amazonaws.com/fixkro_image:latest

@@ -1,10 +1,7 @@
-# Build stage
-FROM gradle:8.5-jdk17 AS build
-COPY --chown=gradle:gradle . /home/gradle/src
-WORKDIR /home/gradle/src
-RUN gradle shadowJar --no-daemon -x test
-
-# Lambda stage
 FROM public.ecr.aws/lambda/java:21
-COPY --from=build /home/gradle/src/build/libs/*aws.jar ${LAMBDA_TASK_ROOT}/app.jar
+
+# The Java 21 base image expects JARs in the lib folder for the classpath
+COPY build/libs/*aws.jar ${LAMBDA_TASK_ROOT}/lib/app.jar
+
+# Set the handler - using double colons for the method
 CMD [ "com.iotabuild.zippyhand_Admin.StreamLambdaHandler::handleRequest" ]

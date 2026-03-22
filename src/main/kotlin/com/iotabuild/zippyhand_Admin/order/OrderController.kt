@@ -40,9 +40,15 @@ class OrderController(
 
     @GetMapping("/my-orders")
     fun getMyOrders(
-        @AuthenticationPrincipal token: FirebaseToken,
+        @AuthenticationPrincipal token: FirebaseToken?,
         pageable: Pageable
     ): ResponseEntity<ApiResponse<Page<OrderResponse>>> {
+        val auth = org.springframework.security.core.context.SecurityContextHolder.getContext().authentication
+        
+        if (token == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized: No valid token provided"))
+        }
+
         val response = orderService.getOrdersByCustomer(token, pageable)
         return ResponseEntity.ok(ApiResponse.success(response))
     }

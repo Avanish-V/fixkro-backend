@@ -37,7 +37,7 @@ class PricingService(
             
             logger.debug("Found product: ${product.title}, base price: ${product.price}")
             
-            // Convert unit price to BigDecimal and multiply by quantity
+            // Convert unit price to BigDecimal and munltiply by quantity
             val unitPrice = BigDecimal(product.price)
             val basePrice = unitPrice.multiply(BigDecimal(request.quantity))
             
@@ -113,8 +113,6 @@ class PricingService(
                 )
             }
             
-            // Increment usage count
-            couponService.incrementUsageCount(couponCode)
             
             logger.info("Coupon applied successfully: $couponCode, discount: ${validationResult.calculatedDiscount}")
             return validationResult.calculatedDiscount

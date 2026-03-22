@@ -13,8 +13,14 @@ data class User(
     @Column(nullable = false, unique = true)
     val firebaseUid: String,
 
-    @Column(nullable = false)
-    val phoneNumber: String,
+    @Column(nullable = true)
+    val name: String? = null,
+
+    @Column(nullable = true)
+    val email: String? = null,
+
+    @Column(nullable = true)
+    val phoneNumber: String? = null,
 
     @Column(nullable = false)
     val createdAt: LocalDateTime = LocalDateTime.now(),

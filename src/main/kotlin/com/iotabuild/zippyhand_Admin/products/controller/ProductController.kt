@@ -4,15 +4,22 @@ import com.iotabuild.zippyhand_Admin.common.response.ApiResponse
 import com.iotabuild.zippyhand_Admin.products.models.*
 import com.iotabuild.zippyhand_Admin.products.service.ProductService
 import jakarta.validation.Valid
+import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/v1")
 class ProductController(private val productService: ProductService) {
+    private val logger = LoggerFactory.getLogger(ProductController::class.java)
 
     @PostMapping("/category")
     fun createCategory(@Valid @RequestBody request: CreateCategoryRequest): ApiResponse<CategoryResponse> {
-        return ApiResponse.success(productService.createCategory(request))
+        return try {
+            ApiResponse.success(productService.createCategory(request))
+        } catch (e: Exception) {
+            logger.error("Error creating category: ${e.message}", e)
+            ApiResponse.error("Failed to create category: ${e.message}")
+        }
     }
 
     @GetMapping("/categories")
@@ -27,7 +34,12 @@ class ProductController(private val productService: ProductService) {
 
     @PostMapping("/service")
     fun createProduct(@Valid @RequestBody request: CreateProductRequest): ApiResponse<ProductResponse> {
-        return ApiResponse.success(productService.createProduct(request))
+        return try {
+            ApiResponse.success(productService.createProduct(request))
+        } catch (e: Exception) {
+            logger.error("Error creating product: ${e.message}", e)
+            ApiResponse.error("Failed to create product: ${e.message}")
+        }
     }
 
     @GetMapping("/services")

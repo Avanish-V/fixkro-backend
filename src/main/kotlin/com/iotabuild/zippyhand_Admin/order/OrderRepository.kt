@@ -6,6 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository
 import java.util.Optional
 
 interface OrderRepository : JpaRepository<Order, Long> {
-    fun findByCustomerId(customerId: String, pageable: Pageable): Page<Order>
+    fun findByCustomerId(customerId: String,pageable: Pageable): Page<Order>
     fun findByOrderId(orderId: String): Optional<Order>
 }

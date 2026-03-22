@@ -1,12 +1,19 @@
 spring:
   application:
     name: zippyhand-Admin
-
+  main:
+    lazy-initialization: true
+    banner-mode: off
 
   datasource:
-    # 👇 Direct connection string with username and password embedded
-    url: jdbc:postgresql://aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres?user=postgres.pifgeycbjxluaubdhmhh&password=JVozMCXgmBQo417G
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres?sslmode=require&prepareThreshold=0}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres.pifgeycbjxluaubdhmhh}
+    password: ${SPRING_DATASOURCE_PASSWORD:EuYau0aKfknCDh55}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 2
+      initialization-fail-timeout: -1
 
   jpa:
     hibernate:
@@ -14,6 +21,8 @@ spring:
     show-sql: true
     properties:
       hibernate:
+        temp:
+          use_jdbc_metadata_defaults: false
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
@@ -21,11 +30,22 @@ spring:
     serialization:
       write-dates-as-timestamps: false
 
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+      enabled: true
+
 # Pricing configuration
 pricing:
   tax-rate: 18.0
   currency: INR
   coupons-enabled: true
+
+# Supabase Configuration
+supabase:
+  jwt-secret: ${SUPABASE_JWT_SECRET:H/Ldi6uSyNvZRL0IdAPviviRxqXp1JRvJQnLM7Ty2pMCcaPKYzDVt00l0v0P7vZcKakahY3OdM7BbHOkKpRKEg==} # Found in Supabase > Settings > API > JWT Secret
+  anon-key: ${SUPABASE_ANON_KEY:sb_publishable_jlm_JBM5-m7dRBkMuSVycw_2hfAYeLz} # Found in Supabase > Settings > API > anon public key
 
 # Cashfree Payment Gateway
 cashfree:
@@ -37,3 +57,11 @@ cashfree:
 
 server:
   port: 8085
+
+# AWS Configuration
+aws:
+  s3:
+    access-key: ${AWS_ACCESS_KEY_ID:AKIASGI2PLFWRLQWX47N}
+    secret-key: ${AWS_SECRET_ACCESS_KEY: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}
+    region: ${AWS_REGION:ap-south-1}
+    bucket-name: ${AWS_S3_BUCKET_NAME:fixkrobucket}

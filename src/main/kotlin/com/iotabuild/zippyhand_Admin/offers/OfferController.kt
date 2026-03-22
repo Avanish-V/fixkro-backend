@@ -1,15 +1,25 @@
 package com.iotabuild.zippyhand_Admin.offers
 
 import com.iotabuild.zippyhand_Admin.common.response.ApiResponse
+import com.iotabuild.zippyhand_Admin.payment.PaymentController
+import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/v1/offers")
 class OfferController(private val offerService: OfferService) {
 
+
+    private val logger = LoggerFactory.getLogger(OfferController::class.java)
+
     @GetMapping
     fun getAllOffers(): ApiResponse<List<OfferResponse>> {
         return ApiResponse.success(offerService.getAllOffers())
+    }
+
+    @GetMapping("/product/{productId}")
+    fun getOffersByProduct(@PathVariable productId: Long): ApiResponse<List<OfferResponse>> {
+        return ApiResponse.success(offerService.getOffersByProduct(productId))
     }
 
     @GetMapping("/{id}")

@@ -15,7 +15,8 @@ import java.time.LocalDateTime
  */
 @Service
 class CouponService(
-    private val couponRepository: CouponRepository
+    private val couponRepository: CouponRepository,
+    private val offerRepository: com.iotabuild.zippyhand_Admin.offers.OfferRepository
 ) {
     
     private val logger = LoggerFactory.getLogger(CouponService::class.java)
@@ -151,77 +152,84 @@ class CouponService(
     ): CouponValidationResult {
         logger.debug("Validating coupon: $code for product: $productId, amount: $orderAmount")
         
-        try {
-            val coupon = couponRepository.findByCodeIgnoreCase(code)
-                .orElseThrow { CouponNotFoundException(code) }
-            
+        val couponOpt = couponRepository.findByCodeIgnoreCase(code)
+        
+        if (couponOpt.isPresent) {
+            val coupon = couponOpt.get()
             // Check if active
             if (!coupon.isActive) {
-                return CouponValidationResult(
-                    isValid = false,
-                    errorMessage = "Coupon is not active"
-                )
+                return CouponValidationResult(isValid = false, errorMessage = "Coupon is not active")
             }
             
             // Check expiry
             val now = LocalDateTime.now()
             if (now.isBefore(coupon.validFrom) || now.isAfter(coupon.validUntil)) {
-                return CouponValidationResult(
-                    isValid = false,
-                    errorMessage = "Coupon has expired or not yet valid"
-                )
+                return CouponValidationResult(isValid = false, errorMessage = "Coupon has expired or not yet valid")
             }
             
             // Check usage limit
             if (coupon.totalUsageLimit != null && coupon.currentUsageCount >= coupon.totalUsageLimit) {
-                return CouponValidationResult(
-                    isValid = false,
-                    errorMessage = "Coupon usage limit reached"
-                )
+                return CouponValidationResult(isValid = false, errorMessage = "Coupon usage limit reached")
             }
             
             // Check minimum order value
             if (coupon.minOrderValue != null && orderAmount < coupon.minOrderValue) {
-                return CouponValidationResult(
-                    isValid = false,
-                    errorMessage = "Minimum order value of ${coupon.minOrderValue} not met"
-                )
+                return CouponValidationResult(isValid = false, errorMessage = "Minimum order value of ${coupon.minOrderValue} not met")
             }
             
             // Check product applicability
             if (coupon.applicableProductIds != null && !coupon.applicableProductIds.contains(productId)) {
-                return CouponValidationResult(
-                    isValid = false,
-                    errorMessage = "Coupon not applicable to this product"
-                )
+                return CouponValidationResult(isValid = false, errorMessage = "Coupon not applicable to this product")
             }
             
             // Check category applicability
             if (coupon.applicableCategoryIds != null && categoryId != null && 
                 !coupon.applicableCategoryIds.contains(categoryId)) {
-                return CouponValidationResult(
-                    isValid = false,
-                    errorMessage = "Coupon not applicable to this category"
-                )
+                return CouponValidationResult(isValid = false, errorMessage = "Coupon not applicable to this category")
             }
             
-            // Calculate discount
             val discount = calculateDiscount(coupon, orderAmount)
+            return CouponValidationResult(isValid = true, coupon = coupon, calculatedDiscount = discount)
+        }
+
+        // Fallback to Offers table (Admin Hub creates items here)
+        val offerOpt = offerRepository.findByCouponCodeIgnoreCase(code)
+        if (offerOpt.isPresent) {
+            val offer = offerOpt.get()
             
-            logger.info("Coupon validated successfully: $code, discount: $discount")
-            
+            if (offer.status != com.iotabuild.zippyhand_Admin.offers.OfferStatus.ACTIVE) {
+                return CouponValidationResult(isValid = false, errorMessage = "Offer is not active")
+            }
+
+            if (LocalDateTime.now().isAfter(offer.expiryDate)) {
+                return CouponValidationResult(isValid = false, errorMessage = "Offer has expired")
+            }
+
+            // Check product/category applicability for Offer
+            if (offer.productId != null && offer.productId != productId) {
+                return CouponValidationResult(isValid = false, errorMessage = "Offer not applicable to this product")
+            }
+
+            if (offer.categoryId != null && offer.categoryId != categoryId) {
+                return CouponValidationResult(isValid = false, errorMessage = "Offer not applicable to this category")
+            }
+
+            val discount = when (offer.discountType) {
+                com.iotabuild.zippyhand_Admin.offers.OfferDiscountType.PERCENTAGE -> {
+                    (orderAmount * offer.discountValue / BigDecimal(100)).setScale(2, RoundingMode.HALF_UP)
+                }
+                com.iotabuild.zippyhand_Admin.offers.OfferDiscountType.FIXED -> {
+                    offer.discountValue
+                }
+            }
+
             return CouponValidationResult(
                 isValid = true,
-                coupon = coupon,
-                calculatedDiscount = discount
-            )
-            
-        } catch (e: CouponNotFoundException) {
-            return CouponValidationResult(
-                isValid = false,
-                errorMessage = e.message
+                calculatedDiscount = discount.min(orderAmount)
             )
         }
+
+        return CouponValidationResult(isValid = false, errorMessage = "Invalid coupon code")
     }
     
     /**
@@ -231,16 +239,19 @@ class CouponService(
     fun incrementUsageCount(code: String) {
         logger.debug("Incrementing usage count for coupon: $code")
         
-        val coupon = couponRepository.findByCodeIgnoreCase(code)
-            .orElseThrow { CouponNotFoundException(code) }
+        val couponOpt = couponRepository.findByCodeIgnoreCase(code)
         
-        val updated = coupon.copy(
-            currentUsageCount = coupon.currentUsageCount + 1,
-            updatedAt = LocalDateTime.now()
-        )
-        
-        couponRepository.save(updated)
-        logger.debug("Usage count incremented for coupon: $code")
+        if (couponOpt.isPresent) {
+            val coupon = couponOpt.get()
+            val updated = coupon.copy(
+                currentUsageCount = coupon.currentUsageCount + 1,
+                updatedAt = LocalDateTime.now()
+            )
+            couponRepository.save(updated)
+            logger.debug("Usage count incremented for coupon: $code")
+        } else {
+            logger.info("Coupon code $code not found in coupon repository, skipping usage increment")
+        }
     }
     
     /**

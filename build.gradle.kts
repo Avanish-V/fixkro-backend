@@ -23,9 +23,7 @@ repositories {
 
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-security")
-	implementation("org.springframework.boot:spring-boot-starter-web") {
-        exclude(group = "org.springframework.boot", module = "spring-boot-starter-tomcat")
-    }
+	implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
@@ -38,6 +36,11 @@ dependencies {
     implementation("org.postgresql:postgresql:42.7.7")
     implementation("com.google.firebase:firebase-admin:9.4.3")
 
+    // JWT Support for Supabase
+    implementation("io.jsonwebtoken:jjwt-api:0.12.5")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.5")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.5")
+
     // Payment Integration - HTTP Client
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
@@ -45,6 +48,8 @@ dependencies {
     implementation("com.amazonaws.serverless:aws-serverless-java-container-springboot3:2.1.0")
     implementation("com.amazonaws:aws-lambda-java-core:1.2.3")
     implementation("com.amazonaws:aws-lambda-java-events:3.11.4")
+    // AWS S3 Support
+    implementation("software.amazon.awssdk:s3:2.25.10")
 }
 
 kotlin {

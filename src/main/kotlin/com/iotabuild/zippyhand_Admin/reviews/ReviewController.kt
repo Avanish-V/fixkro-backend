@@ -2,10 +2,13 @@ package com.iotabuild.zippyhand_Admin.reviews
 
 import com.iotabuild.zippyhand_Admin.common.response.ApiResponse
 import org.springframework.web.bind.annotation.*
+import org.slf4j.LoggerFactory
 
 @RestController
 @RequestMapping("/api/v1/reviews")
 class ReviewController(private val reviewService: ReviewService) {
+
+    private val log = LoggerFactory.getLogger(ReviewController::class.java)
 
     @GetMapping
     fun getAllReviews(): ApiResponse<List<ReviewResponse>> {
@@ -19,6 +22,7 @@ class ReviewController(private val reviewService: ReviewService) {
 
     @PostMapping
     fun createReview(@RequestBody request: CreateReviewRequest): ApiResponse<ReviewResponse> {
+        log.info("Received request to create review: {}", request)
         return ApiResponse.success(reviewService.createReview(request))
     }
 

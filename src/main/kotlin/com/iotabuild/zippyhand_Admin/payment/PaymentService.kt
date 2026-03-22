@@ -27,12 +27,15 @@ class PaymentService(
     private val paymentRepository: PaymentRepository,
     private val orderRepository: OrderRepository,
     private val pricingRepository: PricingService,
-    private val orderService: OrderService,
     private val cashfreeConfig: CashfreeConfig,
     private val objectMapper: ObjectMapper
 ) {
 
-    private val httpClient = OkHttpClient()
+    private val httpClient = OkHttpClient.Builder()
+        .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+        .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+        .build()
     private val logger = LoggerFactory.getLogger(PaymentService::class.java)
 
     companion object {
@@ -46,54 +49,41 @@ class PaymentService(
      */
     @Transactional
     fun createPaymentOrder(request: CreatePaymentOrderRequest): PaymentOrderResponse {
-
-
-        // Check if payment already exists
-//        if (paymentRepository.existsByOrderId(request.orderId)) {
-//            throw PaymentAlreadyExistsException(request.orderId)
-//        }
-
-        // Verify order exists
-//        orderRepository.findById(request.orderId)
-//            .orElseThrow { ApiException.notFound("Order not found: ${request.orderId}") }
-
-        // Generate unique Cashfree order ID
-
         val totalAmount = pricingRepository.calculateFinalPrice(PriceRequest(productId = request.productId))
-
         val cfOrderId = "order_${generateOrderId()}_${System.currentTimeMillis()}"
 
+        return createCashfreeSession(
+            orderId = cfOrderId,
+            amount = totalAmount.totalPrice.toDouble(),
+            customerName = request.customerName,
+            customerEmail = request.customerEmail,
+            customerPhone = request.customerPhone
+        )
+    }
+
+    @Transactional
+    fun createCashfreeSession(
+        orderId: String,
+        amount: Double,
+        customerName: String,
+        customerEmail: String,
+        customerPhone: String
+    ): PaymentOrderResponse {
         // Prepare Cashfree order request
         val cashfreeRequest = CashfreeCreateOrderRequest(
-            order_id = cfOrderId,
-            order_amount = totalAmount.totalPrice.toDouble(),
+            order_id = orderId,
+            order_amount = amount,
             order_currency = "INR",
             customer_details = CashfreeCustomer(
-                customer_id = cfOrderId,
-                customer_name = request.customerName,
-                customer_email = request.customerEmail,
-                customer_phone = request.customerPhone
+                customer_id = orderId, // Or a separate customer ID if you have one
+                customer_name = customerName,
+                customer_email = customerEmail,
+                customer_phone = customerPhone
             ),
         )
 
         // Call Cashfree API
         val cashfreeResponse = callCashfreeCreateOrder(cashfreeRequest)
-
-        // Save payment record
-//        val payment = Payment(
-//            orderId = cfOrderId,
-//            cfOrderId = cashfreeResponse.cf_order_id,
-//            customerName = request.customerName,
-//            customerPhone = request.customerPhone,
-//            customerEmail = request.customerEmail,
-//            amount = totalAmount.totalPrice.toInt(),
-//            currency = cashfreeResponse.order_currency,
-//            paymentStatus = mapCashfreeStatus(cashfreeResponse.order_status),
-//            returnUrl = request.returnUrl
-//        )
-
-//        val savedPayment = paymentRepository.save(payment)
-//        logger.info("Payment order created successfully: ${savedPayment.cfOrderId}")
 
         return PaymentOrderResponse(
             orderId = cashfreeResponse.order_id,
@@ -104,6 +94,7 @@ class PaymentService(
         )
     }
 
+
     /**
      * Verify payment status
      */
@@ -111,19 +102,21 @@ class PaymentService(
     fun verifyPayment(request: VerifyPaymentRequest): CashfreeOrderResponse {
         logger.info("Verifying payment for order ID: ${request.orderId}")
 
-//        val payment = paymentRepository.findByOrderId(request.orderId)
-//            .orElseThrow { PaymentNotFoundException(request.orderId) }
-
         try {
             // Fetch latest payment status from Cashfree
             val cashfreeOrder = callCashfreeGetOrder(request.orderId)
 
+            // Update order payment status based on Cashfree response
+            if (cashfreeOrder.order_status.equals("PAID", ignoreCase = true)) {
+                updateOrderPaymentStatus(cashfreeOrder.order_id, com.iotabuild.zippyhand_Admin.order.PaymentStatus.PAID)
+                logger.info("Payment verified and order ${cashfreeOrder.order_id} marked as PAID")
+            }
 
-            // Update payment with latest status
-            // Update payment details if payment exists
-            // Update order payment status if payment is successful
             return cashfreeOrder
 
+        } catch (e: CashfreeApiException) {
+            logger.error("Cashfree API error during verification: ${e.message}", e)
+            throw PaymentVerificationException("Unable to verify payment: ${e.message}")
         } catch (e: Exception) {
             logger.error("Payment verification failed", e)
             throw PaymentVerificationException(e.message ?: "Unknown error")
@@ -209,6 +202,9 @@ class PaymentService(
         val url = "${cashfreeConfig.getBaseUrl()}$CREATE_ORDER_ENDPOINT"
         val jsonBody = objectMapper.writeValueAsString(request)
 
+        logger.info("Creating Cashfree order: URL=$url")
+        logger.debug("Request body: $jsonBody")
+
         val httpRequest = Request.Builder()
             .url(url)
             .post(jsonBody.toRequestBody("application/json".toMediaType()))
@@ -218,20 +214,32 @@ class PaymentService(
             .addHeader("Content-Type", "application/json")
             .build()
 
-        httpClient.newCall(httpRequest).execute().use { response ->
-            val responseBody = response.body?.string() ?: throw CashfreeApiException("Empty response from Cashfree")
+        try {
+            httpClient.newCall(httpRequest).execute().use { response ->
+                val responseBody = response.body?.string() ?: throw CashfreeApiException("Empty response from Cashfree")
 
-            if (!response.isSuccessful) {
-                logger.error("Cashfree API error: ${response.code} - $responseBody")
-                throw CashfreeApiException("Failed to create order: ${response.code} - $responseBody")
+                logger.info("Cashfree API response: code=${response.code}, body=$responseBody")
+
+                if (!response.isSuccessful) {
+                    logger.error("Cashfree API error: ${response.code} - $responseBody")
+                    throw CashfreeApiException("Failed to create order: ${response.code} - $responseBody")
+                }
+
+                return objectMapper.readValue(responseBody)
             }
-
-            return objectMapper.readValue(responseBody)
+        } catch (e: java.net.SocketTimeoutException) {
+            logger.error("Cashfree API timeout: Unable to connect to $url", e)
+            throw CashfreeApiException("Cashfree API timeout. Please check your network connection or try again later.", e)
+        } catch (e: java.io.IOException) {
+            logger.error("Cashfree API network error: ${e.message}", e)
+            throw CashfreeApiException("Network error while connecting to Cashfree: ${e.message}", e)
         }
     }
 
     private fun callCashfreeGetOrder(cfOrderId: String): CashfreeOrderResponse {
         val url = "${cashfreeConfig.getBaseUrl()}$GET_ORDER_ENDPOINT/$cfOrderId"
+
+        logger.info("Fetching Cashfree order: URL=$url, cfOrderId=$cfOrderId")
 
         val httpRequest = Request.Builder()
             .url(url)
@@ -243,6 +251,8 @@ class PaymentService(
 
         httpClient.newCall(httpRequest).execute().use { response ->
             val responseBody = response.body?.string() ?: throw CashfreeApiException("Empty response from Cashfree")
+
+            logger.info("Cashfree get order response: code=${response.code}, body=$responseBody")
 
             if (!response.isSuccessful) {
                 logger.error("Cashfree API error: ${response.code} - $responseBody")
@@ -334,7 +344,10 @@ class PaymentService(
 
     private fun updateOrderPaymentStatus(orderId: String, status: com.iotabuild.zippyhand_Admin.order.PaymentStatus) {
         try {
-            orderService.updateOrderPaymentStatus(orderId, status)
+            val order = orderRepository.findByOrderId(orderId)
+                .orElseThrow { RuntimeException("Order not found with orderId: $orderId") }
+            order.paymentStatus = status
+            orderRepository.save(order)
             logger.info("Updated order $orderId payment status to $status")
         } catch (e: Exception) {
             logger.error("Failed to update order payment status", e)

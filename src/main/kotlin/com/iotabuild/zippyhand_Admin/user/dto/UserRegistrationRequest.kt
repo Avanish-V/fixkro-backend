@@ -8,12 +8,15 @@ import jakarta.validation.constraints.NotBlank
  * This DTO can be used for additional profile data like 'displayName' or 'email'.
  */
 data class UserRegistrationRequest(
-    val displayName: String? = null
+    val name: String? = null,
+    val email: String? = null,
+    val phoneNumber: String? = null
 )
 
 data class UserResponse(
-    val userName: String?=null,
     val id: Long?,
     val firebaseUid: String,
-    val phoneNumber: String?
+    val name: String? = null,
+    val email: String? = null,
+    val phoneNumber: String? = null
 )

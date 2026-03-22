@@ -3,36 +3,52 @@ package com.iotabuild.zippyhand_Admin.common.config
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
+import com.google.firebase.auth.FirebaseAuth
+import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import java.io.FileInputStream
-import javax.annotation.PostConstruct
+import java.io.InputStream
 
 @Configuration
 class FirebaseConfig {
 
-    @PostConstruct
-    fun initialize() {
-        if (FirebaseApp.getApps().isEmpty()) {
-            try {
-                // Try from local file first (for development)
-                val serviceAccount = FileInputStream("src/main/resources/account.json")
-                val options = FirebaseOptions.builder()
-                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                    .setStorageBucket("fixkro-237ec.firebasestorage.app")
-                    .build()
-                FirebaseApp.initializeApp(options)
-            } catch (e: Exception) {
-                // Fallback to default credentials (for production/cloud environments)
-                try {
-                    val options = FirebaseOptions.builder()
-                        .setCredentials(GoogleCredentials.getApplicationDefault())
-                        .setStorageBucket("fixkro-237ec.firebasestorage.app")
-                        .build()
-                    FirebaseApp.initializeApp(options)
-                } catch (ex: Exception) {
-                    println("Firebase could not be initialized. Make sure you have provided service-account.json or set GOOGLE_APPLICATION_CREDENTIALS: ${ex.message}")
-                }
-            }
+    @Bean
+    fun firebaseApp(): FirebaseApp {
+        println("FirebaseConfig: Initializing Firebase App Bean...")
+        val apps = FirebaseApp.getApps()
+        if (apps.isNotEmpty()) {
+            println("FirebaseConfig: Firebase App already exists, returning existing instance")
+            return apps[0]
         }
+
+        return try {
+            val serviceAccount = this::class.java.classLoader.getResourceAsStream("account.json")
+            
+            if (serviceAccount == null) {
+                println("FirebaseConfig: account.json not found in classpath!")
+                throw RuntimeException("account.json not found in classpath")
+            }
+            
+            val options = FirebaseOptions.builder()
+                .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                .setStorageBucket("fixkro-237ec.firebasestorage.app")
+                .build()
+            
+            val app = FirebaseApp.initializeApp(options)
+            println("FirebaseConfig: Firebase App [DEFAULT] initialized successfully")
+            app
+        } catch (e: Exception) {
+            println("FirebaseConfig: Failed to initialize with account.json: ${e.message}")
+            // Fallback to application default
+            val options = FirebaseOptions.builder()
+                .setCredentials(GoogleCredentials.getApplicationDefault())
+                .setStorageBucket("fixkro-237ec.firebasestorage.app")
+                .build()
+            FirebaseApp.initializeApp(options)
+        }
+    }
+
+    @Bean
+    fun firebaseAuth(firebaseApp: FirebaseApp): FirebaseAuth {
+        return FirebaseAuth.getInstance(firebaseApp)
     }
 }

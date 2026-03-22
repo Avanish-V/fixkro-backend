@@ -54,6 +54,24 @@ class OfferService(
         }
     }
 
+    fun getOffersByProduct(productId: Long): List<OfferResponse> {
+        val product = productRepository.findById(productId)
+            .orElseThrow { RuntimeException("Product not found") }
+        
+        val activeOffers = offerRepository.findActiveOffersForProduct(
+            productId = product.productId,
+            categoryId = product.categoryId,
+            now = LocalDateTime.now()
+        )
+
+        val products = mapOf(product.productId to product)
+        val categories = categoryRepository.findAll().associateBy { it.categoryId }
+
+        return activeOffers.map { offer ->
+            mapToResponse(offer, products, categories)
+        }
+    }
+
     fun getOfferById(id: Long): OfferResponse {
         val offer = offerRepository.findById(id).orElseThrow { RuntimeException("Offer not found") }
         val product = offer.productId?.let { productRepository.findById(it).orElse(null) }

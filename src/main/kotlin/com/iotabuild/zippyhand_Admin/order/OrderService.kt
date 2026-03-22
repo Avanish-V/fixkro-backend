@@ -13,7 +13,10 @@ import java.math.BigDecimal
 @Service
 class OrderService(
     private val orderRepository: OrderRepository,
-    private val professionalRepository: com.iotabuild.zippyhand_Admin.professionals.repository.ProfessionalRepository
+    private val professionalRepository: com.iotabuild.zippyhand_Admin.professionals.repository.ProfessionalRepository,
+    private val couponService: com.iotabuild.zippyhand_Admin.coupon.service.CouponService,
+    private val paymentService: com.iotabuild.zippyhand_Admin.payment.PaymentService,
+    private val productRepository: com.iotabuild.zippyhand_Admin.products.repository.ProductRepository
 ) {
 
     private fun entityToResponse(order: Order): OrderResponse {
@@ -25,6 +28,7 @@ class OrderService(
             customerId = order.customerId,
             productId = order.productId,
             productTitle = order.productTitle,
+            productImage = order.productImage,
             applianceBrand = order.applianceBrand,
             applianceModel = order.applianceModel,
             technicianId = order.technicianId,
@@ -60,23 +64,69 @@ class OrderService(
     fun createOrder(token: FirebaseToken, request: OrderRequest): CreateOrderResponse {
 
         val customerUid = token.uid
-        val orderId = "order_${generateOrderId()}_${System.currentTimeMillis()}"
+        val cfOrderId = "order_${generateOrderId()}_${System.currentTimeMillis()}"
 
+        // 1. VALIDATION: Fetch product from DB (Never trust client price)
+        val productId = request.serviceProduct.productId.toLong()
+        val product = productRepository.findById(productId)
+            .orElseThrow { RuntimeException("Product not found with id: $productId") }
+
+        val basePrice = product.price
+        
+        // 2. VALIDATION: Coupon calculation (Recalculate on server)
+        var calculatedDiscount = 0
+        request.priceDetail.coupon?.takeIf { it.isNotBlank() }?.let { couponCode ->
+            val validationResult = couponService.validateAndCalculateDiscount(
+                code = couponCode,
+                productId = productId,
+                categoryId = product.categoryId,
+                orderAmount = java.math.BigDecimal(basePrice)
+            )
+            
+            if (!validationResult.isValid) {
+                throw RuntimeException("Invalid coupon: ${validationResult.errorMessage}")
+            }
+            calculatedDiscount = validationResult.calculatedDiscount?.toInt() ?: 0
+        }
+
+        // 3. FINAL AMOUNT CALCULATION
+        val verifiedTax = request.priceDetail.tax // For now, we trust client tax, but price/discount are verified
+        val finalAmount = (basePrice + verifiedTax) - calculatedDiscount
+
+        // 4. Create Cashfree Session with VERIFIED amount
+        val paymentSession = try {
+            paymentService.createCashfreeSession(
+                orderId = cfOrderId,
+                amount = finalAmount.toDouble(),
+                customerName = request.serviceAddress.fullName,
+                customerEmail = token.email ?: "customer@example.com",
+                customerPhone = request.serviceAddress.phone
+            )
+        } catch (e: Exception) {
+            println("Failed to create Cashfree session: ${e.message}")
+            e.printStackTrace()
+            throw RuntimeException("Payment session creation failed: ${e.message}", e)
+        }
+
+        // 5. Save order to DB after successful session creation
         val order = Order(
             customerId = customerUid,
-            orderId = orderId,
+            orderId = cfOrderId,
             applianceBrand = request.serviceProduct.applianceBrand,
             applianceModel = request.serviceProduct.applianceModel,
-            totalAmount = request.priceDetail.totalAmount,
-            productId = request.serviceProduct.productId.toLong(),
-            productTitle = request.serviceProduct.productTitle,
+            totalAmount = finalAmount,
+            productId = productId,
+            productTitle = product.title,
+            productImage = product.image,
             technicianId = request.technicianId?.toLong(),
-            discount = request.priceDetail.discount,
-            paymentStatus = PaymentStatus.PAID,
-            paymentMode = PaymentMode.UPI,
+            discount = calculatedDiscount,
+            paymentStatus = PaymentStatus.PENDING,
+            paymentMode = request.transaction.paymentMode.let { mode ->
+                try { PaymentMode.valueOf(mode.uppercase()) } catch (e: Exception) { PaymentMode.UPI }
+            },
             scheduledAt = request.serviceSchedule,
-            price = request.priceDetail.price,
-            tax = request.priceDetail.tax,
+            price = basePrice,
+            tax = verifiedTax,
             couponCode = request.priceDetail.coupon,
             fullName = request.serviceAddress.fullName,
             phone = request.serviceAddress.phone,
@@ -84,17 +134,30 @@ class OrderService(
             addressLine2 = request.serviceAddress.addressLine2,
             city = request.serviceAddress.city,
             state = request.serviceAddress.state,
-            postalCode =request.serviceAddress.postalCode,
+            postalCode = request.serviceAddress.postalCode,
         )
 
         val savedOrder = orderRepository.save(order)
 
+        // Increment coupon usage if applied
+        request.priceDetail.coupon?.let { couponCode ->
+            try {
+                couponService.incrementUsageCount(couponCode)
+            } catch (e: Exception) {
+                // Log but don't fail order creation if coupon tracking fails
+                println("Failed to increment coupon usage for $couponCode: ${e.message}")
+            }
+        }
+
         return CreateOrderResponse(
-            orderId = savedOrder.id,
+            orderId = savedOrder.orderId,
+            cfOrderId = paymentSession.cfOrderId,
+            paymentSessionId = paymentSession.paymentSessionId,
             status = savedOrder.status,
             totalAmount = savedOrder.totalAmount
         )
     }
+
 
     @Transactional(readOnly = true)
     fun getOrder(token: FirebaseToken?, orderId: Long): OrderResponse {
@@ -111,9 +174,9 @@ class OrderService(
     }
 
     @Transactional(readOnly = true)
-    fun getOrdersByCustomer(token: FirebaseToken, pageable: Pageable): Page<OrderResponse> {
-        return orderRepository.findByCustomerId(token.uid, pageable)
-            .map { entityToResponse(it) }
+    fun getOrdersByCustomer(token: FirebaseToken?,pageable: Pageable): Page<OrderResponse> {
+        return token?.let { orderRepository.findByCustomerId(it.uid,pageable) }
+            ?.map { entityToResponse(it) } ?: Page.empty<OrderResponse>()
     }
 
     @Transactional

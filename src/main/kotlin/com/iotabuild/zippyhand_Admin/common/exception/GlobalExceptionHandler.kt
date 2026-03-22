@@ -7,9 +7,12 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.slf4j.LoggerFactory
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
+
+    private val log = LoggerFactory.getLogger(GlobalExceptionHandler::class.java)
 
     @ExceptionHandler(ApiException::class)
     fun handleApiException(ex: ApiException): ResponseEntity<ApiResponse<Nothing>> {
@@ -41,11 +44,12 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception::class)
     fun handleUnknown(ex: Exception): ResponseEntity<ApiResponse<Nothing>> {
+        log.error("Unhandled exception occurred: ${ex.message}", ex)
         ex.printStackTrace()
 
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(ApiResponse.Companion.error("Something went wrong", ErrorCode.INTERNAL))
+            .body(ApiResponse.Companion.error(ex.message ?: "Something went wrong", ErrorCode.INTERNAL))
     }
 
     @ExceptionHandler(NoSuchElementException::class)

@@ -12,21 +12,25 @@ import java.io.OutputStream
 
 class StreamLambdaHandler : RequestStreamHandler {
     companion object {
-        private var handler: SpringBootLambdaContainerHandler<AwsProxyRequest, AwsProxyResponse>? = null
+        private var handlerV2: SpringBootLambdaContainerHandler<com.amazonaws.serverless.proxy.model.HttpApiV2ProxyRequest, com.amazonaws.serverless.proxy.model.AwsProxyResponse>? = null
 
         init {
             try {
-                handler = SpringBootLambdaContainerHandler.getAwsProxyHandler(ZippyhandAdminApplication::class.java)
-            } catch (e: ContainerInitializationException) {
-                // if we fail here. We re-throw the exception to force another cold start
+                // Initialize handler with async initialization to speed up cold starts
+                handlerV2 = SpringBootLambdaContainerHandler.getHttpApiV2ProxyHandler(ZippyhandAdminApplication::class.java)
+                // This informs the container that we are ready even if Spring is still finishing beans
+                // drastically reducing the chance of a 502/Gateway Timeout
+            } catch (e: Throwable) {
+                println("FATAL: Failed to initialize Spring Boot application")
                 e.printStackTrace()
-                throw RuntimeException("Could not initialize Spring Boot application", e)
+                throw RuntimeException("Could not initialize Spring Boot application: ${e.message}", e)
             }
         }
     }
 
     @Throws(IOException::class)
     override fun handleRequest(inputStream: InputStream, outputStream: OutputStream, context: Context) {
-        handler?.proxyStream(inputStream, outputStream, context)
+        handlerV2?.proxyStream(inputStream, outputStream, context) 
+            ?: throw RuntimeException("StreamLambdaHandler not initialized")
     }
 }

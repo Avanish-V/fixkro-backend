@@ -4,6 +4,7 @@ import com.google.firebase.auth.FirebaseToken
 import com.google.protobuf.Api
 import com.iotabuild.zippyhand_Admin.address.dto.AddressResponse
 import com.iotabuild.zippyhand_Admin.address.dto.CreateAddressRequest
+import com.iotabuild.zippyhand_Admin.common.response.ApiError
 import com.iotabuild.zippyhand_Admin.common.response.ApiResponse
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
@@ -26,7 +27,9 @@ class AddressController (private val addressService: AddressService){
     }
 
     @GetMapping
-    fun getUserAddresses(@AuthenticationPrincipal idToken: FirebaseToken): ApiResponse<List<AddressResponse>>{
+    fun getUserAddresses(@AuthenticationPrincipal idToken: FirebaseToken?): ApiResponse<List<AddressResponse>>{
+
+        requireNotNull(idToken) { "Unauthorized" }
 
         val addresses = addressService.getUserAddresses(idToken)
         return ApiResponse.success(addresses)
