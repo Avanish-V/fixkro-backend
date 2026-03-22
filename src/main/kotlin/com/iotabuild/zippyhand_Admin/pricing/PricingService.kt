@@ -52,7 +52,7 @@ class PricingService(
                 .setScale(2, RoundingMode.HALF_UP)
                 .max(BigDecimal.ZERO) // Ensure non-negative
             
-            logger.info("Price calculation complete - Base: $basePrice, Tax: $taxAmount, Discount: $discountAmount, Final: $finalPrice")
+            logger.info("Price calculation complete-${request.quantity} - Base: $basePrice, Tax: $taxAmount, Discount: $discountAmount, Final: $finalPrice")
             
             return PriceDetailResponse(
                 basePrice = basePrice,

@@ -32,6 +32,7 @@ class SecurityConfig(
                     .requestMatchers("/api/v1/payments/health").permitAll()
                     .requestMatchers("/api/v1/auth/**").permitAll() // Supabase Login
                     .requestMatchers("/api/v1/cities/active").permitAll()
+                    .requestMatchers("/api/v1/hello").permitAll()
                     
                     // Public GET access for catalogs (Mobile app needs these without auth or with optional auth)
                     .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/categories").permitAll()
@@ -57,6 +58,7 @@ class SecurityConfig(
                     // Write operations for products and cities are ADMIN only
                     .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/cities/**", "/api/v1/category/**", "/api/v1/service/**").hasRole("ADMIN")
                     .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/v1/cities/**", "/api/v1/category/**", "/api/v1/product/**").hasRole("ADMIN")
+                    .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/v1/cities/**", "/api/v1/category/**", "/api/v1/product/**").hasRole("ADMIN")
                     .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/cities/**", "/api/v1/category/**", "/api/v1/product/**").hasRole("ADMIN")
 
                     // 3. MOBILE/CLIENT ENDPOINTS (Firebase Auth -> ROLE_USER)
@@ -88,7 +90,7 @@ class SecurityConfig(
             "https://homecare-hub-six.vercel.app",
             "https://admin.fixkro.in"
         )
-        configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
+        configuration.allowedMethods = listOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
         configuration.allowedHeaders = listOf("*")
         configuration.allowCredentials = true
         val source = UrlBasedCorsConfigurationSource()

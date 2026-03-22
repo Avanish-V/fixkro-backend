@@ -43,13 +43,25 @@ class ProductController(private val productService: ProductService) {
     }
 
     @GetMapping("/services")
-    fun getByCategory(@RequestParam categoryId: Long): ApiResponse<List<ProductResponse>> {
-        return ApiResponse.success(productService.getService(categoryId))
+    fun getByCategory(@RequestParam categoryId: Long, @RequestParam(required = false) status: String?): ApiResponse<List<ProductResponse>> {
+        val finalStatus = when (status?.lowercase()) {
+            "all" -> null
+            "inactive" -> false
+            "active", "true" -> true
+            else -> true // Default for mobile and unauthenticated requests
+        }
+        return ApiResponse.success(productService.getService(categoryId, finalStatus))
     }
 
     @GetMapping("/services/all")
-    fun getAllServices(): ApiResponse<List<ProductResponse>> {
-        return ApiResponse.success(productService.getAllServices())
+    fun getAllServices(@RequestParam(required = false) status: String?): ApiResponse<List<ProductResponse>> {
+        val finalStatus = when (status?.lowercase()) {
+            "all" -> null
+            "inactive" -> false
+            "active", "true" -> true
+            else -> true // Default to active
+        }
+        return ApiResponse.success(productService.getAllServices(finalStatus))
     }
 
     @GetMapping("/product/{id}")
@@ -60,6 +72,16 @@ class ProductController(private val productService: ProductService) {
     @PutMapping("/product/{id}")
     fun updateProduct(@PathVariable id: Long, @Valid @RequestBody request: UpdateProductRequest): ApiResponse<ProductResponse> {
         return ApiResponse.success(productService.updateProduct(id, request))
+    }
+
+    @PatchMapping("/product/{id}/status")
+    fun toggleProductStatus(@PathVariable id: Long, @RequestParam status: Boolean): ApiResponse<ProductResponse> {
+        return try {
+            ApiResponse.success(productService.toggleProductStatus(id, status))
+        } catch (e: Exception) {
+            logger.error("Error toggling product status: ${e.message}", e)
+            ApiResponse.error("Failed to toggle status: ${e.message}")
+        }
     }
 
     @DeleteMapping("/product/{id}")

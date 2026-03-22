@@ -38,7 +38,7 @@ spring:
 
 # Pricing configuration
 pricing:
-  tax-rate: 18.0
+  tax-rate: 0.0
   currency: INR
   coupons-enabled: true
 

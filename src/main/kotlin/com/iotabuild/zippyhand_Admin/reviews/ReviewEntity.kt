@@ -25,6 +25,10 @@ data class Review(
     @Column(name = "technician_rating", nullable = false)
     val technicianRating: Int = 0,
 
+
+    @Column(name = "technician_id", nullable = true)
+    val technicianId: Long? = 0,
+
     @Column(name = "is_recommended", nullable = false)
     val isRecommended: Boolean = true,
 

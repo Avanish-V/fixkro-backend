@@ -1,8 +1,12 @@
 package com.iotabuild.zippyhand_Admin.order
 
 import com.google.firebase.auth.FirebaseToken
+import com.iotabuild.zippyhand_Admin.address.AddressRepository
+import com.iotabuild.zippyhand_Admin.address.AddressService
 import com.iotabuild.zippyhand_Admin.common.exception.OrderNotFoundException
 import com.iotabuild.zippyhand_Admin.payment.generateOrderId
+import com.iotabuild.zippyhand_Admin.pricing.PricingService
+import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.security.access.AccessDeniedException
@@ -13,11 +17,16 @@ import java.math.BigDecimal
 @Service
 class OrderService(
     private val orderRepository: OrderRepository,
+    private val addressRepository: AddressService,
     private val professionalRepository: com.iotabuild.zippyhand_Admin.professionals.repository.ProfessionalRepository,
     private val couponService: com.iotabuild.zippyhand_Admin.coupon.service.CouponService,
     private val paymentService: com.iotabuild.zippyhand_Admin.payment.PaymentService,
-    private val productRepository: com.iotabuild.zippyhand_Admin.products.repository.ProductRepository
+    private val productRepository: com.iotabuild.zippyhand_Admin.products.repository.ProductRepository,
+    private val pricingService: com.iotabuild.zippyhand_Admin.pricing.PricingService
 ) {
+
+
+    private val logger = LoggerFactory.getLogger(PricingService::class.java)
 
     private fun entityToResponse(order: Order): OrderResponse {
         val technician = order.technicianId?.let { professionalRepository.findById(it).orElse(null) }
@@ -66,41 +75,35 @@ class OrderService(
         val customerUid = token.uid
         val cfOrderId = "order_${generateOrderId()}_${System.currentTimeMillis()}"
 
-        // 1. VALIDATION: Fetch product from DB (Never trust client price)
-        val productId = request.serviceProduct.productId.toLong()
-        val product = productRepository.findById(productId)
-            .orElseThrow { RuntimeException("Product not found with id: $productId") }
-
-        val basePrice = product.price
-        
-        // 2. VALIDATION: Coupon calculation (Recalculate on server)
-        var calculatedDiscount = 0
-        request.priceDetail.coupon?.takeIf { it.isNotBlank() }?.let { couponCode ->
-            val validationResult = couponService.validateAndCalculateDiscount(
-                code = couponCode,
-                productId = productId,
-                categoryId = product.categoryId,
-                orderAmount = java.math.BigDecimal(basePrice)
+        // 1. RE-CALCULATE AND VERIFY PRICING (Never trust client pricing for security)
+        val pricingDetails = pricingService.calculateFinalPrice(
+            com.iotabuild.zippyhand_Admin.pricing.PriceRequest(
+                productId = request.productId,
+                quantity = request.quantity,
+                couponCode = request.couponCode
             )
-            
-            if (!validationResult.isValid) {
-                throw RuntimeException("Invalid coupon: ${validationResult.errorMessage}")
-            }
-            calculatedDiscount = validationResult.calculatedDiscount?.toInt() ?: 0
-        }
+        )
 
-        // 3. FINAL AMOUNT CALCULATION
-        val verifiedTax = request.priceDetail.tax // For now, we trust client tax, but price/discount are verified
-        val finalAmount = (basePrice + verifiedTax) - calculatedDiscount
+        val finalAmount = pricingDetails.totalPrice.toInt()
+        val basePriceTotal = pricingDetails.basePrice.toInt()
+        val verifiedTax = pricingDetails.taxAmount.toInt()
+        val calculatedDiscount = pricingDetails.discount.toInt()
+        
+        val product = productRepository.findById(request.productId)
+            .orElseThrow { RuntimeException("Product not found") }
 
-        // 4. Create Cashfree Session with VERIFIED amount
+        val address = addressRepository.getAddressById(token,request.addressId)
+
+        logger.info("price-------------$finalAmount")
+
+        // 2. Create Cashfree Session with VERIFIED amount
         val paymentSession = try {
             paymentService.createCashfreeSession(
                 orderId = cfOrderId,
                 amount = finalAmount.toDouble(),
-                customerName = request.serviceAddress.fullName,
+                customerName = address.fullName,
                 customerEmail = token.email ?: "customer@example.com",
-                customerPhone = request.serviceAddress.phone
+                customerPhone = address.phone
             )
         } catch (e: Exception) {
             println("Failed to create Cashfree session: ${e.message}")
@@ -112,35 +115,33 @@ class OrderService(
         val order = Order(
             customerId = customerUid,
             orderId = cfOrderId,
-            applianceBrand = request.serviceProduct.applianceBrand,
-            applianceModel = request.serviceProduct.applianceModel,
+            applianceBrand = "",
+            applianceModel = "",
             totalAmount = finalAmount,
-            productId = productId,
+            productId = request.productId,
             productTitle = product.title,
             productImage = product.image,
-            technicianId = request.technicianId?.toLong(),
+            technicianId = null,
             discount = calculatedDiscount,
             paymentStatus = PaymentStatus.PENDING,
-            paymentMode = request.transaction.paymentMode.let { mode ->
-                try { PaymentMode.valueOf(mode.uppercase()) } catch (e: Exception) { PaymentMode.UPI }
-            },
+            paymentMode = PaymentMode.UPI,
             scheduledAt = request.serviceSchedule,
-            price = basePrice,
+            price = basePriceTotal,
             tax = verifiedTax,
-            couponCode = request.priceDetail.coupon,
-            fullName = request.serviceAddress.fullName,
-            phone = request.serviceAddress.phone,
-            addressLine1 = request.serviceAddress.addressLine1,
-            addressLine2 = request.serviceAddress.addressLine2,
-            city = request.serviceAddress.city,
-            state = request.serviceAddress.state,
-            postalCode = request.serviceAddress.postalCode,
+            couponCode = request.couponCode,
+            fullName = address.fullName,
+            phone = address.phone,
+            addressLine1 = address.addressLine1,
+            addressLine2 = address.addressLine2,
+            city = address.city,
+            state = address.state,
+            postalCode = address.postalCode,
         )
 
         val savedOrder = orderRepository.save(order)
 
         // Increment coupon usage if applied
-        request.priceDetail.coupon?.let { couponCode ->
+        request.couponCode?.let { couponCode ->
             try {
                 couponService.incrementUsageCount(couponCode)
             } catch (e: Exception) {

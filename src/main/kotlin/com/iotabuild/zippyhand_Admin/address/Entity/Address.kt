@@ -17,13 +17,13 @@ data class Address(
     val userId: String,
 
     val fullName: String,
-    val phone: String?,
+    val phone: String,
 
     val addressLine1: String,
     val addressLine2: String?,
 
     val city: String,
-    val state: String?,
+    val state: String,
     val postalCode: String,
 
     val isDefault: Boolean = false,

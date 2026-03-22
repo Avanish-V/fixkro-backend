@@ -5,11 +5,11 @@ import com.iotabuild.zippyhand_Admin.address.Entity.Address
 data class AddressResponse(
     val id: Long,
     val fullName: String,
-    val phone: String?,
+    val phone: String,
     val addressLine1: String,
     val addressLine2: String?,
     val city: String,
-    val state: String?,
+    val state: String,
     val postalCode: String,
     val isDefault: Boolean
 )

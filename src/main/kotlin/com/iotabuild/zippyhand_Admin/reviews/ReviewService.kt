@@ -22,10 +22,11 @@ data class ReviewResponse(
 
 data class CreateReviewRequest(
     val productId: Long,
-    val orderId: Long?,
+    val orderId: Long,
     val customerName: String,
     val rating: Int,
     val technicianRating: Int,
+    val technicianId: Long,
     val isRecommended: Boolean,
     val impressions: Set<String>,
     val comment: String
@@ -108,6 +109,7 @@ class ReviewService(
             customerName = request.customerName,
             rating = request.rating,
             technicianRating = request.technicianRating,
+            technicianId = request.technicianId,
             isRecommended = request.isRecommended,
             impressions = request.impressions,
             comment = request.comment

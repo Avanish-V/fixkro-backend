@@ -41,4 +41,30 @@ class AddressService(private val addressRepository: AddressRepository) {
         } ?: emptyList()
     }
 
+    @Transactional
+    fun getAddressById(idToken: FirebaseToken, addressId: Long): AddressResponse {
+        val uid = idToken.uid
+        val address = addressRepository.findById(addressId).orElse(null)
+            ?: throw IllegalArgumentException("Address not found")
+
+        if (address.userId != uid) {
+            throw IllegalArgumentException("Unauthorized to access this address")
+        }
+
+        return address.toResponse()
+    }
+
+    @Transactional
+    fun deleteAddress(idToken: FirebaseToken, addressId: Long) {
+        val uid = idToken.uid
+        val address = addressRepository.findById(addressId).orElse(null)
+            ?: throw IllegalArgumentException("Address not found")
+            
+        if (address.userId != uid) {
+            throw IllegalArgumentException("Unauthorized to delete this address")
+        }
+        
+        addressRepository.deleteById(addressId)
+    }
+
 }

@@ -78,15 +78,19 @@ class ProductService(
         return entityToResponse(product)
     }
 
-    fun getService(categoryId: Long): List<ProductResponse> {
-        return productRepository.findAllByCategoryId(categoryId).map {
-            entityToResponse(it)
+    fun getService(categoryId: Long, status: Boolean? = null): List<ProductResponse> {
+        return if (status != null) {
+            productRepository.findAllByCategoryIdAndStatus(categoryId, status).map { entityToResponse(it) }
+        } else {
+            productRepository.findAllByCategoryId(categoryId).map { entityToResponse(it) }
         }
     }
 
-    fun getAllServices(): List<ProductResponse> {
-        return productRepository.findAll().map {
-            entityToResponse(it)
+    fun getAllServices(status: Boolean? = null): List<ProductResponse> {
+        return if (status != null) {
+            productRepository.findAllByStatus(status).map { entityToResponse(it) }
+        } else {
+            productRepository.findAll().map { entityToResponse(it) }
         }
     }
 
@@ -132,6 +136,16 @@ class ProductService(
             price = request.price,
             descriptions = request.descriptions
         )
+        val saved = productRepository.save(updated)
+        return entityToResponse(saved)
+    }
+
+    @Transactional
+    fun toggleProductStatus(productId: Long, status: Boolean): ProductResponse {
+        val existing = productRepository.findById(productId)
+            .orElseThrow { NoSuchElementException("Product not found with id: $productId") }
+        
+        val updated = existing.copy(status = status)
         val saved = productRepository.save(updated)
         return entityToResponse(saved)
     }

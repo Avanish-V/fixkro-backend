@@ -1,5 +1,6 @@
 package com.iotabuild.zippyhand_Admin.order
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import jakarta.persistence.Column
 import java.math.BigDecimal
 import java.time.Instant
@@ -7,11 +8,10 @@ import java.time.LocalDateTime
 
 
 data class OrderRequest(
-    val serviceAddress: Address,
-    val serviceProduct: ServiceProduct,
-    val technicianId: Int? = null,
-    val priceDetail: PriceDetail,
-    val transaction: Transaction,
+    val addressId: Long,
+    val productId: Long,
+    val quantity: Int = 1,
+    val couponCode: String?,
     val createdAt: String,
     val serviceSchedule: String
 )
@@ -22,6 +22,8 @@ data class ServiceProduct(
     val productTitle: String,
     val applianceBrand: String,
     val applianceModel: String,
+    @JsonProperty("quantity")
+    val quantity: Int = 1,
 )
 
 data class PriceDetail(

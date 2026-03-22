@@ -11,4 +11,6 @@ interface CategoryRepository : JpaRepository<CategoryEntity, Long>
 @Repository
 interface ProductRepository : JpaRepository<ProductEntity, Long> {
     fun findAllByCategoryId(categoryId: Long): List<ProductEntity>
+    fun findAllByCategoryIdAndStatus(categoryId: Long, status: Boolean): List<ProductEntity>
+    fun findAllByStatus(status: Boolean): List<ProductEntity>
 }
