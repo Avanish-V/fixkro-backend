@@ -1,12 +1,9 @@
 package com.iotabuild.zippyhand_Admin.user.dto
 
-import jakarta.validation.constraints.NotBlank
+import com.iotabuild.zippyhand_Admin.user.entity.UserRole
+import com.iotabuild.zippyhand_Admin.user.entity.UserStatus
+import java.time.LocalDateTime
 
-/**
- * Request body for user registration.
- * Note: UID and Phone Number are extracted from the Firebase ID Token for security.
- * This DTO can be used for additional profile data like 'displayName' or 'email'.
- */
 data class UserRegistrationRequest(
     val name: String? = null,
     val email: String? = null,
@@ -18,5 +15,9 @@ data class UserResponse(
     val firebaseUid: String,
     val name: String? = null,
     val email: String? = null,
-    val phoneNumber: String? = null
+    val phoneNumber: String? = null,
+    val role: UserRole,
+    val status: UserStatus,
+    val createdAt: LocalDateTime?,
+    val updatedAt: LocalDateTime?
 )

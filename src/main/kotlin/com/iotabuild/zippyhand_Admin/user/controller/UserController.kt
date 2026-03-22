@@ -26,4 +26,17 @@ class UserController(private val userService: UserService) {
         val userResponse = userService.findByFirebaseUid(token.uid)
         return ApiResponse.success(userResponse)
     }
+
+    @GetMapping
+    fun getAllUsers(): ApiResponse<List<UserResponse>> {
+        return ApiResponse.success(userService.findAllUsers())
+    }
+
+    @PatchMapping("/{uid}/status")
+    fun updateStatus(
+        @PathVariable uid: String,
+        @RequestParam status: com.iotabuild.zippyhand_Admin.user.entity.UserStatus
+    ): ApiResponse<UserResponse> {
+        return ApiResponse.success(userService.updateStatus(uid, status))
+    }
 }
