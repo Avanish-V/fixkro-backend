@@ -56,10 +56,11 @@ class SecurityConfig(
                     .requestMatchers("/api/v1/order/*/assign-technician").hasRole("ADMIN")
                     
                     // Write operations for products and cities are ADMIN only
-                    .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/cities/**", "/api/v1/category/**", "/api/v1/service/**").hasRole("ADMIN")
+                    .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/cities/**", "/api/v1/category/**", "/api/v1/service/**", "/api/v1/files/**").hasRole("ADMIN")
                     .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/v1/cities/**", "/api/v1/category/**", "/api/v1/product/**").hasRole("ADMIN")
                     .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/v1/cities/**", "/api/v1/category/**", "/api/v1/product/**").hasRole("ADMIN")
-                    .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/cities/**", "/api/v1/category/**", "/api/v1/product/**").hasRole("ADMIN")
+                    .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/cities/**", "/api/v1/category/**", "/api/v1/product/**", "/api/v1/files/**").hasRole("ADMIN")
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/files/**").hasRole("ADMIN")
 
                     // 3. MOBILE/CLIENT ENDPOINTS (Firebase Auth -> ROLE_USER)
                     .requestMatchers("/api/v1/users/register").hasRole("USER")

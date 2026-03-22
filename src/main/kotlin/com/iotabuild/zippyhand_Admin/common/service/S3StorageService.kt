@@ -56,6 +56,8 @@ class S3StorageService(
                 .contentType(targetContentType)
                 .build()
 
+            logger.info("Sending PutObjectRequest to bucket: $bucketName, key: $fileName, region: $region")
+            
             // Using fromBytes is safer for small files and SVGs to ensure the content is fully read
             s3Client.putObject(putObjectRequest, RequestBody.fromBytes(file.bytes))
 
@@ -68,7 +70,7 @@ class S3StorageService(
             logger.info("Successfully uploaded $originalFilename. URL: $url")
             url
         } catch (e: Exception) {
-            logger.error("Failed to upload file $originalFilename to S3: ${e.message}", e)
+            logger.error("Failed to upload file $originalFilename to S3 (Bucket: $bucketName, Region: $region): ${e.message}", e)
             throw RuntimeException("Failed to upload file to storage: ${e.message}")
         }
     }
