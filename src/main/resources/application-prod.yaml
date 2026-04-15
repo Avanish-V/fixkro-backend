@@ -1,0 +1,45 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  datasource:
+    # Use Production Database (Env variables preferred in Production)
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 30000
+      connection-timeout: 20000
+
+  jpa:
+    hibernate:
+      # SECURE: Checks that tables exist but will NEVER modify them in Production
+      ddl-auto: validate 
+    show-sql: false 
+    properties:
+      hibernate:
+        format_sql: false
+        generate_statistics: false
+
+  kafka:
+    admin:
+      auto-create: false # Recommended for Production
+
+# Cashfree Payment Gateway (Production Mode)
+cashfree:
+  app-id: ${CASHFREE_APP_ID}
+  secret-key: ${CASHFREE_SECRET_KEY}
+  api-version: 2023-08-01
+  environment: PROD
+  base-url: https://api.cashfree.com/pg
+
+logging:
+  level:
+    root: INFO
+    com.iotabuild.zippyhand_Admin: INFO
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN

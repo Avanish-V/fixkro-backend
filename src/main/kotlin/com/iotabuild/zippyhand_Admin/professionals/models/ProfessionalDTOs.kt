@@ -2,6 +2,7 @@ package com.iotabuild.zippyhand_Admin.professionals.models
 
 data class ProfessionalResponse(
     val id: Long,
+    val firebaseUid: String,
     val name: String,
     val photo: String,
     val mobile: String,
@@ -10,11 +11,10 @@ data class ProfessionalResponse(
     val aadharCard: String,
     val idPhoto: String,
     val status: String,
-    val completedJobs: Int,
-    val rating: Double
 )
 
 data class CreateProfessionalRequest(
+    val firebaseUid: String = "",
     val name: String,
     val photo: String = "",
     val mobile: String,
@@ -25,6 +25,7 @@ data class CreateProfessionalRequest(
 )
 
 data class UpdateProfessionalRequest(
+    val firebaseUid: String,
     val name: String,
     val photo: String,
     val mobile: String,

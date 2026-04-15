@@ -1,0 +1,33 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  datasource:
+    # Use local PostgeSQL or a dedicated dev Supabase instance
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres?sslmode=require&prepareThreshold=0}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres.pifgeycbjxluaubdhmhh}
+    password: ${SPRING_DATASOURCE_PASSWORD:EuYau0aKfknCDh55}
+
+  jpa:
+    hibernate:
+      ddl-auto: update # Automatically update schema (Good for DEV)
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+# Cashfree Payment Gateway (Sandbox/Test Mode)
+cashfree:
+  app-id: TEST110319976a2230c4147f5790f67079913011 # Replace with your Sandbox App ID
+  secret-key: cfsk_ma_test_930dadbd5ed585b54d90e370d93f404a_affac9f8 # Replace with your Sandbox Secret Key
+  api-version: 2023-08-01
+  environment: SANDBOX
+  base-url: https://sandbox.cashfree.com/pg
+
+logging:
+  level:
+    com.iotabuild.zippyhand_Admin: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

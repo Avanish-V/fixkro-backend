@@ -24,4 +24,12 @@ interface StorageService {
      * @return The pre-signed URL
      */
     fun generatePresignedUrl(fileName: String, expirationMinutes: Long = 15): String
+    
+    /**
+     * Generates a pre-signed URL for client-side direct upload to S3 (Bypassing Lambda binary limits).
+     * @param folder The target folder
+     * @param extension The file extension (e.g. .jpg)
+     * @return A map containing 'uploadUrl' and 'publicUrl'
+     */
+    fun generatePresignedPutUrl(folder: String, extension: String, contentType: String): Map<String, String>
 }

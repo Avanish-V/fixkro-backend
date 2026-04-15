@@ -50,6 +50,14 @@ dependencies {
     implementation("com.amazonaws:aws-lambda-java-events:3.11.4")
     // AWS S3 Support
     implementation("software.amazon.awssdk:s3:2.25.10")
+
+    // Notification Service Integrations
+    implementation("org.springframework.kafka:spring-kafka")
+    implementation("net.javacrumbs.shedlock:shedlock-spring:5.13.0")
+    implementation("net.javacrumbs.shedlock:shedlock-provider-jdbc-template:5.13.0")
+    implementation("com.twilio.sdk:twilio:10.1.0")
+    implementation("com.sendgrid:sendgrid-java:4.10.1")
+    implementation("com.github.spullara.mustache.java:compiler:0.9.11")
 }
 
 kotlin {

@@ -1,30 +1,40 @@
 spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:prod}
+    
   application:
     name: zippyhand-Admin
   main:
     lazy-initialization: true
     banner-mode: off
 
-  datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres?sslmode=require&prepareThreshold=0}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres.pifgeycbjxluaubdhmhh}
-    password: ${SPRING_DATASOURCE_PASSWORD:EuYau0aKfknCDh55}
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      connection-timeout: 30000
-      maximum-pool-size: 2
-      initialization-fail-timeout: -1
-
   jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
+    # Use environment specific configurations (application-dev.yaml or application-prod.yaml) for ddl-auto
+    show-sql: false 
     properties:
       hibernate:
         temp:
           use_jdbc_metadata_defaults: false
-        format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    admin:
+      auto-create: false # Stop blocking startup waiting for Kafka
+    properties:
+      request.timeout.ms: 5000 # Shorten the timeout
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      group-id: zippyhand-admin-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
 
   jackson:
     serialization:
@@ -47,13 +57,8 @@ supabase:
   jwt-secret: ${SUPABASE_JWT_SECRET:H/Ldi6uSyNvZRL0IdAPviviRxqXp1JRvJQnLM7Ty2pMCcaPKYzDVt00l0v0P7vZcKakahY3OdM7BbHOkKpRKEg==} # Found in Supabase > Settings > API > JWT Secret
   anon-key: ${SUPABASE_ANON_KEY:sb_publishable_jlm_JBM5-m7dRBkMuSVycw_2hfAYeLz} # Found in Supabase > Settings > API > anon public key
 
-# Cashfree Payment Gateway
-cashfree:
-  app-id: 257493c08aee5e707d618168a4394752
-  secret-key: cd1d129bca05453908452ffff5419de176aed9f7
-  api-version: 2023-08-01
-  environment: TEST
-  base-url: https://sandbox.cashfree.com/pg
+# Cashfree Payment Gateway 
+# Ensure these are provided as ENV variables or are defined in the specific application-{profile}.yaml
 
 server:
   port: 8085
@@ -61,15 +66,8 @@ server:
 # AWS Configuration
 aws:
   s3:
-    access-key: ${AWS_ACCESS_KEY_ID:AKIASGI2PLFWRLQWX47N}
-    secret-key: ${AWS_SECRET_ACCESS_KEY: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}
+    access-key: ${S3_ACCESS_KEY}
+    secret-key: ${S3_SECRET_KEY}
     region: ${AWS_REGION:ap-south-1}
     bucket-name: ${AWS_S3_BUCKET_NAME:fixkrobucket}
     public-url-prefix: https://fixkrobucket.s3.ap-south-1.amazonaws.com
-
-logging:
-  level:
-    com.iotabuild.zippyhand_Admin: DEBUG
-    org.springframework.web: DEBUG
-    org.springframework.security: INFO
-    software.amazon.awssdk: INFO

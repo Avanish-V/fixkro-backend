@@ -110,6 +110,9 @@ class PaymentService(
             if (cashfreeOrder.order_status.equals("PAID", ignoreCase = true)) {
                 updateOrderPaymentStatus(cashfreeOrder.order_id, com.iotabuild.zippyhand_Admin.order.PaymentStatus.PAID)
                 logger.info("Payment verified and order ${cashfreeOrder.order_id} marked as PAID")
+            } else {
+                logger.warn("Payment verification failed for order ${cashfreeOrder.order_id}: Status is ${cashfreeOrder.order_status}")
+                throw PaymentVerificationException("Payment is not successful. Current status: ${cashfreeOrder.order_status}")
             }
 
             return cashfreeOrder

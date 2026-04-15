@@ -45,10 +45,6 @@ class Order(
     val applianceBrand: String? = null,
     val applianceModel: String? = null,
 
-    /* ---------- TECHNICIAN ---------- */
-
-    var technicianId: Long? = null,
-
     /* ---------- PRICING ---------- */
 
     @Column(nullable = false)

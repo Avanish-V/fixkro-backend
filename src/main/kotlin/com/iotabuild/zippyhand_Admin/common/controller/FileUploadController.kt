@@ -45,4 +45,18 @@ class FileUploadController(private val storageService: StorageService) {
             ApiResponse.error("Failed to generate presigned URL: ${e.message}")
         }
     }
+
+    @GetMapping("/presigned-put-url")
+    fun getPresignedPutUrl(
+        @RequestParam("folder", defaultValue = "general") folder: String,
+        @RequestParam("extension") extension: String,
+        @RequestParam("contentType") contentType: String
+    ): ApiResponse<Map<String, String>> {
+        return try {
+            val data = storageService.generatePresignedPutUrl(folder, extension, contentType)
+            ApiResponse.success(data)
+        } catch (e: Exception) {
+            ApiResponse.error("Failed to generate presigned PUT URL: ${e.message}")
+        }
+    }
 }

@@ -43,8 +43,6 @@ class OrderController(
         @AuthenticationPrincipal token: FirebaseToken?,
         pageable: Pageable
     ): ResponseEntity<ApiResponse<Page<OrderResponse>>> {
-        val auth = org.springframework.security.core.context.SecurityContextHolder.getContext().authentication
-        
         if (token == null) {
             return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized: No valid token provided"))
         }
@@ -79,6 +77,14 @@ class OrderController(
         @RequestParam technicianId: Long
     ): ResponseEntity<ApiResponse<OrderResponse>> {
         val response = orderService.assignTechnician(orderId, technicianId)
+        return ResponseEntity.ok(ApiResponse.success(response))
+    }
+
+    @PostMapping("/{orderId}/unassign-technician")
+    fun unassignTechnician(
+        @PathVariable orderId: Long
+    ): ResponseEntity<ApiResponse<OrderResponse>> {
+        val response = orderService.unassignTechnician(orderId)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 }

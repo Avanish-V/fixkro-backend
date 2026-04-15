@@ -106,6 +106,35 @@ class S3StorageService(
         return presignedRequest.url().toExternalForm()
     }
 
+    override fun generatePresignedPutUrl(folder: String, extension: String, contentType: String): Map<String, String> {
+        val targetExtension = if (extension.startsWith(".")) extension else ".$extension"
+        val fileName = "${folder}/${UUID.randomUUID()}$targetExtension"
+        
+        val putObjectRequest = PutObjectRequest.builder()
+            .bucket(bucketName)
+            .key(fileName)
+            .contentType(contentType)
+            .build()
+            
+        val presignRequest = software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest.builder()
+            .signatureDuration(Duration.ofMinutes(15))
+            .putObjectRequest(putObjectRequest)
+            .build()
+            
+        val presignedRequest = s3Presigner.presignPutObject(presignRequest)
+        
+        val publicUrl = if (publicUrlPrefix.isNotBlank()) {
+            "${publicUrlPrefix.removeSuffix("/")}/$fileName"
+        } else {
+            s3Client.utilities().getUrl(GetUrlRequest.builder().bucket(bucketName).key(fileName).build()).toExternalForm()
+        }
+        
+        return mapOf(
+            "uploadUrl" to presignedRequest.url().toExternalForm(),
+            "publicUrl" to publicUrl
+        )
+    }
+
     private fun validateFile(file: MultipartFile) {
         if (file.isEmpty) {
             throw IllegalArgumentException("Cannot upload empty file")

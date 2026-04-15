@@ -32,6 +32,9 @@ data class OrderResponse(
     val technicianId: Long? = null,
     val technicianName: String? = null,
     val technicianPhoto: String? = null,
+    val technicianUid: String? = null,
+    val technicianPhone: String? = null,
+    val otp: String? = null,
 
     /* ---------- PRICING ---------- */
 

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository
 @Repository
 interface ProfessionalRepository : JpaRepository<ProfessionalEntity, Long> {
     fun findByMobile(mobile: String): ProfessionalEntity?
+    fun findByFirebaseUid(firebaseUid: String): ProfessionalEntity?
     
     @Query("SELECT p FROM ProfessionalEntity p WHERE p.mobile LIKE %:query% OR p.name LIKE %:query%")
     fun searchProfessionals(query: String): List<ProfessionalEntity>

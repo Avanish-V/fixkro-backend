@@ -53,7 +53,7 @@ class SecurityConfig(
                     .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/offers/**").hasRole("ADMIN")
                     .requestMatchers("/api/v1/order/all").hasRole("ADMIN")
                     .requestMatchers("/api/v1/order/*/status").hasRole("ADMIN")
-                    .requestMatchers("/api/v1/order/*/assign-technician").hasRole("ADMIN")
+                    .requestMatchers("/api/v1/order/*/assign-technician").permitAll()
                     
                     // Write operations for products and cities are ADMIN only
                     .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/cities/**", "/api/v1/category/**", "/api/v1/service/**", "/api/v1/files/**").hasRole("ADMIN")
@@ -64,6 +64,7 @@ class SecurityConfig(
 
                     // 3. MOBILE/CLIENT ENDPOINTS (Firebase Auth -> ROLE_USER)
                     .requestMatchers("/api/v1/users/register").hasRole("USER")
+                    .requestMatchers("/api/v1/partners/**").hasRole("USER")
                     .requestMatchers("/api/v1/addresses/**").hasRole("USER")
                     .requestMatchers("/api/v1/pricing/**").hasRole("USER")
                     .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/order").hasRole("USER")
@@ -72,6 +73,11 @@ class SecurityConfig(
                     
                     // Individual order view can be accessed by either (Owner as USER or Admin)
                     .requestMatchers("/api/v1/order/*").hasAnyRole("ADMIN", "USER")
+                    
+                    // 4. NOTIFICATION ENDPOINTS
+                    .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/notifications").hasAnyRole("ADMIN", "USER")
+                    .requestMatchers("/api/v1/notifications/preferences/**").hasRole("USER")
+                    .requestMatchers("/api/v1/notifications/devices/**").hasRole("USER")
                     
                     // Default behavior
                     .anyRequest().authenticated()

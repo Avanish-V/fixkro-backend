@@ -12,6 +12,8 @@ data class ProfessionalEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
 
+    val firebaseUid: String = "",
+
     @Column(nullable = false)
     val name: String = "",
 
@@ -30,11 +32,7 @@ data class ProfessionalEntity(
 
     val idPhoto: String = "",
 
-    val status: String = "active", // "active", "inactive"
-
-    val completedJobs: Int = 0,
-
-    val rating: Double = 0.0,
+    var status: String = "INCOMPLETE", // "INCOMPLETE", "PENDING", "ACTIVE", "INACTIVE"
 
     @Column(nullable = false)
     val createdAt: LocalDateTime = LocalDateTime.now(),
