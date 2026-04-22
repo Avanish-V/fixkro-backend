@@ -16,7 +16,7 @@ import java.time.LocalDateTime
 @Service
 class CouponService(
     private val couponRepository: CouponRepository,
-    private val offerRepository: com.iotabuild.zippyhand_Admin.offers.OfferRepository
+    private val offerRepository: com.iotabuild.zippyhand_Admin.offers.repository.OfferRepository
 ) {
     
     private val logger = LoggerFactory.getLogger(CouponService::class.java)
@@ -197,7 +197,7 @@ class CouponService(
         if (offerOpt.isPresent) {
             val offer = offerOpt.get()
             
-            if (offer.status != com.iotabuild.zippyhand_Admin.offers.OfferStatus.ACTIVE) {
+            if (offer.status != com.iotabuild.zippyhand_Admin.offers.entity.OfferStatus.ACTIVE) {
                 return CouponValidationResult(isValid = false, errorMessage = "Offer is not active")
             }
 
@@ -215,10 +215,10 @@ class CouponService(
             }
 
             val discount = when (offer.discountType) {
-                com.iotabuild.zippyhand_Admin.offers.OfferDiscountType.PERCENTAGE -> {
+                com.iotabuild.zippyhand_Admin.offers.entity.OfferDiscountType.PERCENTAGE -> {
                     (orderAmount * offer.discountValue / BigDecimal(100)).setScale(2, RoundingMode.HALF_UP)
                 }
-                com.iotabuild.zippyhand_Admin.offers.OfferDiscountType.FIXED -> {
+                com.iotabuild.zippyhand_Admin.offers.entity.OfferDiscountType.FIXED -> {
                     offer.discountValue
                 }
             }
