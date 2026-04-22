@@ -23,6 +23,7 @@ class FirebaseAuthenticationFilter(private val firebaseAuth: FirebaseAuth) : Onc
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             val token = authHeader.substring(7).trim()
+            val parts = token.split(".")
             
             // Optimization: If already authenticated (e.g. by Supabase), skip
             if (SecurityContextHolder.getContext().authentication != null) {
@@ -32,13 +33,12 @@ class FirebaseAuthenticationFilter(private val firebaseAuth: FirebaseAuth) : Onc
 
             try {
                 // Peek at the header to see if it's potentially a Firebase token (RS256)
-                val parts = token.split(".")
                 if (parts.size != 3) {
                     filterChain.doFilter(request, response)
                     return
                 }
 
-                val header = String(java.util.Base64.getDecoder().decode(parts[0]))
+                val header = String(java.util.Base64.getUrlDecoder().decode(parts[0]))
                 if (!header.contains("RS256")) {
                     // Not a Firebase token, skip
                     filterChain.doFilter(request, response)
@@ -52,8 +52,22 @@ class FirebaseAuthenticationFilter(private val firebaseAuth: FirebaseAuth) : Onc
                 val authentication = UsernamePasswordAuthenticationToken(decodedToken, null, authorities)
                 SecurityContextHolder.getContext().authentication = authentication
             } catch (e: Exception) {
-                // Only log if it really looked like a Firebase token but failed
-                println("Firebase Auth Failed: ${e.message}")
+                // Return 401 immediately with context to help debug AWS Lambda token issues
+                System.err.println("Firebase Auth Failed for project 'fixkro-237ec': ${e.message}")
+                
+                // Inspect the token audience manually if possible
+                try {
+                    val payload = String(java.util.Base64.getUrlDecoder().decode(parts[1]))
+                    println("DEBUG: Token Payload: $payload")
+                } catch (pe: Exception) {
+                    println("DEBUG: Could not decode token payload: ${pe.message}")
+                }
+
+                response.status = HttpServletResponse.SC_UNAUTHORIZED
+                response.contentType = "application/json"
+                response.writer.write("{\"error\": \"Authentication Failed\", \"details\": \"${e.message}\", \"expected_aud\": \"fixkro-237ec\"}")
+                response.writer.flush()
+                return
             }
         }
         

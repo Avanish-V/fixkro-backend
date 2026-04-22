@@ -43,7 +43,7 @@ class SupabaseAuthenticationFilter(
                     return
                 }
 
-                val header = String(java.util.Base64.getDecoder().decode(parts[0]))
+                val header = String(java.util.Base64.getUrlDecoder().decode(parts[0]))
                 if (!header.contains("HS256")) {
                     // Not a Supabase token, skip to next filter
                     filterChain.doFilter(request, response)

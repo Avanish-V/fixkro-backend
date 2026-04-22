@@ -24,8 +24,6 @@ data class OtpRecord(
     @Column(name = "otp_encrypted", nullable = false)
     val otpEncrypted: String,
 
-    @Column(name = "expires_at", nullable = false)
-    val expiresAt: Instant,
 
     @Column(name = "created_at", nullable = false)
     val createdAt: Instant = Instant.now()

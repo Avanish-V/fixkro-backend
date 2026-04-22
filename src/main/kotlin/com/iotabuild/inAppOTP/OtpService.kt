@@ -37,7 +37,6 @@ class OtpService(
             orderId = orderId,
             otpHash = otpHash,
             otpEncrypted = otpEncrypted,
-            expiresAt = otpExpireAt
         )
         
         otpRepository.save(otpRecord)

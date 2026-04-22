@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:prod}
+    active: ${SPRING_PROFILES_ACTIVE:dev}
     
   application:
     name: zippyhand-Admin
@@ -47,10 +47,11 @@ spring:
       enabled: true
 
 # Pricing configuration
-pricing:
-  tax-rate: 0.0
-  currency: INR
-  coupons-enabled: true
+zippyhand:
+  pricing:
+    tax-rate: 0.0
+    currency: INR
+    offers-enabled: true
 
 # Supabase Configuration
 supabase:
@@ -66,8 +67,8 @@ server:
 # AWS Configuration
 aws:
   s3:
-    access-key: ${S3_ACCESS_KEY}
-    secret-key: ${S3_SECRET_KEY}
+    access-key: ${S3_ACCESS_KEY:AKIASGI2PLFWRLQWX47N}
+    secret-key: ${S3_SECRET_KEY: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}
     region: ${AWS_REGION:ap-south-1}
     bucket-name: ${AWS_S3_BUCKET_NAME:fixkrobucket}
     public-url-prefix: https://fixkrobucket.s3.ap-south-1.amazonaws.com

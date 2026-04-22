@@ -7,6 +7,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.messaging.FirebaseMessaging
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.io.ClassPathResource
 import java.io.InputStream
 
 @Configuration
@@ -17,30 +18,37 @@ class FirebaseConfig {
         println("FirebaseConfig: Initializing Firebase App Bean...")
         val apps = FirebaseApp.getApps()
         if (apps.isNotEmpty()) {
-            println("FirebaseConfig: Firebase App already exists, returning existing instance")
-            return apps[0]
+            val existingApp = apps[0]
+            println("FirebaseConfig: Firebase App already exists with project: ${existingApp.options.projectId}")
+            if (existingApp.options.projectId != "fixkro-237ec") {
+                println("FirebaseConfig: CRITICAL - Multi-project conflict! Existing project ID is ${existingApp.options.projectId}")
+            }
+            return existingApp
         }
 
         return try {
-            val serviceAccount = this::class.java.classLoader.getResourceAsStream("account.json")
-            
-            if (serviceAccount == null) {
-                println("FirebaseConfig: account.json not found in classpath!")
-                throw RuntimeException("account.json not found in classpath")
+            // Use Spring's ClassPathResource which is more robust in AWS Lambda/JAR environments
+            val resource = ClassPathResource("account.json")
+            if (!resource.exists()) {
+                println("FirebaseConfig: account.json NOT found via ClassPathResource")
+                throw java.io.FileNotFoundException("account.json not found in classpath")
             }
+
+            // Fail-safe: Set project ID as system property for the SDK
+            System.setProperty("GOOGLE_CLOUD_PROJECT", "fixkro-237ec")
             
             val options = FirebaseOptions.builder()
-                .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                .setCredentials(GoogleCredentials.fromStream(resource.inputStream))
                 .setProjectId("fixkro-237ec")
                 .setStorageBucket("fixkro-237ec.firebasestorage.app")
                 .build()
             
             val app = FirebaseApp.initializeApp(options)
-            println("FirebaseConfig: Firebase App [DEFAULT] initialized successfully with project fixkro-237ec")
+            println("FirebaseConfig: Firebase App initialized successfully for project: ${app.options.projectId}")
             app
         } catch (e: Exception) {
-            println("FirebaseConfig: Failed to initialize with account.json: ${e.message}")
-            // Fallback to application default
+            println("FirebaseConfig: Initialization failed: ${e.message}. Falling back...")
+            System.setProperty("GOOGLE_CLOUD_PROJECT", "fixkro-237ec")
             val options = FirebaseOptions.builder()
                 .setCredentials(GoogleCredentials.getApplicationDefault())
                 .setProjectId("fixkro-237ec")

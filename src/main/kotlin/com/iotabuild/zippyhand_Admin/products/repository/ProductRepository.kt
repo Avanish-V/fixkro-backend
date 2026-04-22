@@ -1,7 +1,7 @@
 package com.iotabuild.zippyhand_Admin.products.repository
 
-import com.iotabuild.zippyhand_Admin.products.models.CategoryEntity
-import com.iotabuild.zippyhand_Admin.products.models.ProductEntity
+import com.iotabuild.zippyhand_Admin.products.entity.CategoryEntity
+import com.iotabuild.zippyhand_Admin.products.entity.ProductEntity
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 

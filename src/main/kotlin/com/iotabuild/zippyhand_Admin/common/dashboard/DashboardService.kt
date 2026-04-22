@@ -1,8 +1,8 @@
 package com.iotabuild.zippyhand_Admin.common.dashboard
 
-import com.iotabuild.zippyhand_Admin.order.OrderRepository
-import com.iotabuild.zippyhand_Admin.order.OrderService
-import com.iotabuild.zippyhand_Admin.order.OrderStatus
+import com.iotabuild.zippyhand_Admin.order.repository.OrderRepository
+import com.iotabuild.zippyhand_Admin.order.entity.OrderStatus
+import com.iotabuild.zippyhand_Admin.order.service.OrderQueryService
 import com.iotabuild.zippyhand_Admin.products.repository.ProductRepository
 import com.iotabuild.zippyhand_Admin.professionals.repository.ProfessionalRepository
 import org.springframework.stereotype.Service
@@ -15,7 +15,7 @@ class DashboardService(
     private val orderRepository: OrderRepository,
     private val productRepository: ProductRepository,
     private val professionalRepository: ProfessionalRepository,
-    private val orderService: OrderService
+    private val orderQueryService: OrderQueryService
 ) {
 
     fun getDashboardStats(): DashboardStats {
@@ -51,7 +51,7 @@ class DashboardService(
 
         val recentOrders = allOrders.sortedByDescending { it.createdAt }
             .take(5)
-            .map { orderService.getOrder(null, it.id) }
+            .map { orderQueryService.getOrder(it.id) }
 
         return DashboardStats(
             totalOrders = totalOrders,

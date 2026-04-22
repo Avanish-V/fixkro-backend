@@ -1,4 +1,4 @@
-package com.iotabuild.zippyhand_Admin.address.Entity
+package com.iotabuild.zippyhand_Admin.address.entity
 
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
@@ -6,6 +6,10 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import java.time.Instant
+
+enum class AddressType {
+    HOME, OFFICE, OTHER
+}
 
 @Entity
 @Table(name = "addresses")
@@ -25,6 +29,8 @@ data class Address(
     val city: String,
     val state: String,
     val postalCode: String,
+
+    val addressType: AddressType = AddressType.OTHER,
 
     val isDefault: Boolean = false,
 

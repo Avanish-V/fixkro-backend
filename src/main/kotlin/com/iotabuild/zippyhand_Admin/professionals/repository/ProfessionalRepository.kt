@@ -1,6 +1,6 @@
 package com.iotabuild.zippyhand_Admin.professionals.repository
 
-import com.iotabuild.zippyhand_Admin.professionals.models.ProfessionalEntity
+import com.iotabuild.zippyhand_Admin.professionals.entity.ProfessionalEntity
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository

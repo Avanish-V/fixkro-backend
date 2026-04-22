@@ -18,6 +18,8 @@ data class CreateAddressRequest(
     val state: String,
 
     @field:NotBlank val postalCode: String,
+    
+    val type: String = "OTHER",
 
     val isDefault: Boolean = false
 )

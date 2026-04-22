@@ -1,6 +1,6 @@
 package com.iotabuild.zippyhand_Admin.common.dashboard
 
-import com.iotabuild.zippyhand_Admin.order.OrderResponse
+import com.iotabuild.zippyhand_Admin.order.dto.OrderResponse
 import java.time.LocalDateTime
 
 data class DashboardStats(

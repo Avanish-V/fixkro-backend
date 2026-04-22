@@ -51,9 +51,10 @@ class SecurityConfig(
                     .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/v1/offers/**").hasRole("ADMIN")
                     .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/v1/offers/**").hasRole("ADMIN")
                     .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/offers/**").hasRole("ADMIN")
-                    .requestMatchers("/api/v1/order/all").hasRole("ADMIN")
-                    .requestMatchers("/api/v1/order/*/status").hasRole("ADMIN")
-                    .requestMatchers("/api/v1/order/*/assign-technician").permitAll()
+                    .requestMatchers("/api/v1/order/all", "/api/v1/admin/order/all").hasRole("ADMIN")
+                    .requestMatchers("/api/v1/order/*/status", "/api/v1/admin/order/*/status").hasRole("ADMIN")
+                    .requestMatchers("/api/v1/order/*/assign-technician", "/api/v1/admin/order/*/assign-technician").hasRole("ADMIN")
+                    .requestMatchers("/api/v1/order/*/unassign-technician", "/api/v1/admin/order/*/unassign-technician").hasRole("ADMIN")
                     
                     // Write operations for products and cities are ADMIN only
                     .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/cities/**", "/api/v1/category/**", "/api/v1/service/**", "/api/v1/files/**").hasRole("ADMIN")

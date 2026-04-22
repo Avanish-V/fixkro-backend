@@ -1,6 +1,6 @@
 package com.iotabuild.zippyhand_Admin.address.dto
 
-import com.iotabuild.zippyhand_Admin.address.Entity.Address
+import com.iotabuild.zippyhand_Admin.address.entity.Address
 
 data class AddressResponse(
     val id: Long,
@@ -11,6 +11,7 @@ data class AddressResponse(
     val city: String,
     val state: String,
     val postalCode: String,
+    val type: String,
     val isDefault: Boolean
 )
 fun Address.toResponse() = AddressResponse(
@@ -22,5 +23,6 @@ fun Address.toResponse() = AddressResponse(
     city = city,
     state = state,
     postalCode = postalCode,
-    isDefault = false
+    type = addressType.name,
+    isDefault = isDefault
 )
