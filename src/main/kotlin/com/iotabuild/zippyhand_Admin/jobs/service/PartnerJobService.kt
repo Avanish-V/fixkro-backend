@@ -126,7 +126,7 @@ class PartnerJobService(
 
         val totalPrice = BigDecimal(order.totalAmount)
         val commission = totalPrice.multiply(BigDecimal("0.10"))
-        walletService.recordJobEarning(uid, order.orderId, totalPrice, commission)
+        walletService.recordJobEarning(uid, order.orderId, order.productTitle ?: "Job Earning", totalPrice, commission)
         
         logger.info("Job completed successfully for order ${order.orderId}")
         

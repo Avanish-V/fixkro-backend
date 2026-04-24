@@ -28,3 +28,15 @@ data class BankAccountResponse(
     val isVerified: Boolean,
     val updatedAt: LocalDateTime
 )
+
+data class WithdrawalRequestDto(
+    val amount: BigDecimal,
+    val idempotencyKey: String? = null
+)
+
+data class WithdrawalResponse(
+    val id: String,
+    val amount: BigDecimal,
+    val status: String,
+    val createdAt: java.time.OffsetDateTime
+)

@@ -35,11 +35,14 @@ data class WalletLedger(
     @Column(length = 255)
     val description: String?,
 
+    @Column(length = 100)
+    val title: String? = null,
+
     @Column(name = "idempotency_key", unique = true, length = 100)
     val idempotencyKey: String?,
 
     @Column(nullable = false, length = 20)
-    val status: String = "SETTLED",
+    var status: String = "SETTLED",
 
     @Column(name = "created_at", nullable = false)
     val createdAt: OffsetDateTime = OffsetDateTime.now()

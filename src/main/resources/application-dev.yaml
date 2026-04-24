@@ -19,8 +19,8 @@ spring:
 
 # Cashfree Payment Gateway (Sandbox/Test Mode)
 cashfree:
-  app-id: TEST110319976a2230c4147f5790f67079913011 # Replace with your Sandbox App ID
-  secret-key: cfsk_ma_test_930dadbd5ed585b54d90e370d93f404a_affac9f8 # Replace with your Sandbox Secret Key
+  app-id: CF11031997D7L3EGVV5VLS738HVTH0 # Replace with your Sandbox App ID
+  secret-key: cfsk_ma_test_f3b845aae25b7d2bd7cccee5b7eca5d0_0e68f6e5 # Replace with your Sandbox Secret Key
   api-version: 2023-08-01
   environment: SANDBOX
 

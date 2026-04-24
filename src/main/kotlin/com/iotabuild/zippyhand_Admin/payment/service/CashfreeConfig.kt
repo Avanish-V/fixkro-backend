@@ -21,6 +21,14 @@ class CashfreeConfig {
         }
     }
 
+    fun getPayoutBaseUrl(): String {
+        return if (environment.lowercase() in listOf("production", "prod")) {
+            "https://payout-api.cashfree.com"
+        } else {
+            "https://payout-gamma.cashfree.com"
+        }
+    }
+
     fun isProduction(): Boolean {
         return environment.lowercase() in listOf("production", "prod")
     }

@@ -17,7 +17,7 @@ interface WalletLedgerRepository : JpaRepository<WalletLedger, UUID> {
             0.0
         ) 
         FROM WalletLedger w 
-        WHERE w.technicianId = :uid AND w.status = 'SETTLED'
+        WHERE w.technicianId = :uid AND w.status IN ('SETTLED', 'PENDING')
     """)
     fun getBalance(uid: String): BigDecimal
 
@@ -25,4 +25,5 @@ interface WalletLedgerRepository : JpaRepository<WalletLedger, UUID> {
     fun getTotalLifetimeEarnings(uid: String): BigDecimal
 
     fun findTop20ByTechnicianIdOrderByCreatedAtDesc(uid: String): List<WalletLedger>
+    fun findByReferenceIdAndReferenceType(referenceId: String, referenceType: String): WalletLedger?
 }
