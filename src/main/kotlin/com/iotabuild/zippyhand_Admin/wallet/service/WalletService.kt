@@ -25,9 +25,9 @@ class WalletService(
         orderId: String,
         jobTitle: String,
         totalAmount: BigDecimal,
-        commissionAmount: BigDecimal
+        commissionAmount: BigDecimal // Keep parameter for backward compatibility but ignore it
     ) {
-        val payoutAmount = totalAmount.subtract(commissionAmount)
+        val payoutAmount = totalAmount
         val idempotencyKey = "job_completion_$orderId"
 
         if (repository.findByIdempotencyKey(idempotencyKey) != null) {
@@ -43,7 +43,7 @@ class WalletService(
             referenceId = orderId,
             referenceType = "ORDER",
             title = jobTitle,
-            description = "Net payout for order $orderId (Total: $totalAmount, Commission: $commissionAmount)",
+            description = "100% payout for order $orderId (Total: $totalAmount)",
             idempotencyKey = idempotencyKey
         )
 

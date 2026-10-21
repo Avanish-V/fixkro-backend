@@ -40,8 +40,14 @@ class SecurityConfig(
                     .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/product/**").permitAll()
                     .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/offers/**").permitAll()
                     .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/coupons/**").permitAll()
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/home").permitAll()
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/personalization/**").permitAll()
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/service-availability/**").permitAll()
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/reviews/product/*/client").permitAll()
                     
                     // 2. ADMIN ENDPOINTS (Supabase Auth -> ROLE_ADMIN)
+                    .requestMatchers("/api/v1/admin/personalization/**").hasRole("ADMIN")
+                    .requestMatchers("/api/v1/admin/service-availability/**").hasRole("ADMIN")
                     .requestMatchers("/api/v1/dashboard/**").hasRole("ADMIN")
                     .requestMatchers("/api/v1/professionals/**").hasRole("ADMIN")
                     .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/coupons/**").hasRole("ADMIN")
@@ -57,10 +63,10 @@ class SecurityConfig(
                     .requestMatchers("/api/v1/order/*/unassign-technician", "/api/v1/admin/order/*/unassign-technician").hasRole("ADMIN")
                     
                     // Write operations for products and cities are ADMIN only
-                    .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/cities/**", "/api/v1/category/**", "/api/v1/service/**", "/api/v1/files/**").hasRole("ADMIN")
-                    .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/v1/cities/**", "/api/v1/category/**", "/api/v1/product/**").hasRole("ADMIN")
-                    .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/v1/cities/**", "/api/v1/category/**", "/api/v1/product/**").hasRole("ADMIN")
-                    .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/cities/**", "/api/v1/category/**", "/api/v1/product/**", "/api/v1/files/**").hasRole("ADMIN")
+                    .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/cities/**", "/api/v1/admin/category/**", "/api/v1/admin/service/**", "/api/v1/files/**").hasRole("ADMIN")
+                    .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/v1/cities/**", "/api/v1/admin/category/**", "/api/v1/admin/product/**").hasRole("ADMIN")
+                    .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/v1/cities/**", "/api/v1/admin/category/**", "/api/v1/admin/product/**").hasRole("ADMIN")
+                    .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/cities/**", "/api/v1/admin/category/**", "/api/v1/admin/product/**", "/api/v1/files/**").hasRole("ADMIN")
                     .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/files/**").hasRole("ADMIN")
 
                     // 3. MOBILE/CLIENT ENDPOINTS (Firebase Auth -> ROLE_USER)
@@ -95,7 +101,7 @@ class SecurityConfig(
         configuration.allowedOrigins = listOf(
             "http://localhost:5173", 
             "http://localhost:3000",
-            "https://homecare-hub-six.vercel.app",
+            "https://homecare-hub-ten.vercel.app",
             "https://admin.fixkro.in"
         )
         configuration.allowedMethods = listOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")

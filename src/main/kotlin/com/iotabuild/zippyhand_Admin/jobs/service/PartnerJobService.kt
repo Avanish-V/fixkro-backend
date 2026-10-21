@@ -124,8 +124,9 @@ class PartnerJobService(
         order.completedAt = LocalDateTime.now()
         orderRepository.save(order)
 
+
         val totalPrice = BigDecimal(order.totalAmount)
-        val commission = totalPrice.multiply(BigDecimal("0.10"))
+        val commission = BigDecimal.ZERO
         walletService.recordJobEarning(uid, order.orderId, order.productTitle ?: "Job Earning", totalPrice, commission)
         
         logger.info("Job completed successfully for order ${order.orderId}")
@@ -155,8 +156,8 @@ class PartnerJobService(
     private fun toDetailsResponse(assignment: JobAssignment): JobDetailsResponse {
         val order = orderRepository.findByOrderId(assignment.orderId).orElse(null)
         val totalPrice = order?.totalAmount ?: 0
-        val commission = (totalPrice * 0.1).toInt()
-        val payout = totalPrice - commission
+        val commission = 0
+        val payout = totalPrice
 
         return JobDetailsResponse(
             id = assignment.id,

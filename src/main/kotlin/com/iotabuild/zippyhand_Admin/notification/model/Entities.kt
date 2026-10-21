@@ -20,6 +20,7 @@ class Notification(
     @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
     val payload: String, // Stringified JSON
     @Enumerated(EnumType.STRING) var status: NotificationStatus = NotificationStatus.PENDING,
+    @Column(name = "retry_count") var retryCount: Int = 0,
     @Column(name = "created_at") val createdAt: Instant = Instant.now(),
     @Column(name = "updated_at") var updatedAt: Instant = Instant.now()
 )

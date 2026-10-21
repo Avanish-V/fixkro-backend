@@ -41,21 +41,27 @@ class FcmProvider(
                     AndroidNotification.builder()
                         .setChannelId("zippyhand_alerts")
                         .setPriority(AndroidNotification.Priority.HIGH)
-                        .setSound("default")
+                        .setSound("zippy_alert")
+                        .setIcon("fixkro_logo")
                         .build()
                 )
                 .build()
 
             val messages = tokens.map { token ->
+                val imageUrl = payload["image_url"]?.toString() ?: payload["image"]?.toString()
+                
+                val notificationBuilder = FcmNotification.builder()
+                    .setTitle(subject ?: "Zippyhand Update")
+                    .setBody(content)
+                
+                if (imageUrl != null) {
+                    notificationBuilder.setImage(imageUrl)
+                }
+
                 com.google.firebase.messaging.Message.builder()
                     .setToken(token)
                     .setAndroidConfig(androidConfig)
-                    .setNotification(
-                        FcmNotification.builder()
-                            .setTitle(subject ?: "Zippyhand Update")
-                            .setBody(content)
-                            .build()
-                    )
+                    .setNotification(notificationBuilder.build())
                     .putAllData(payload.mapValues { it.value.toString() })
                     .build()
             }
@@ -66,8 +72,19 @@ class FcmProvider(
             if (response.failureCount > 0) {
                 response.responses.forEachIndexed { index, resp ->
                     if (!resp.isSuccessful) {
+                        val errorCode = resp.exception.messagingErrorCode?.toString() ?: "UNKNOWN"
                         logger.error("FCM Provider: Token {} failed with error code: {}. Message: {}", 
-                            tokens[index].take(10) + "...", resp.exception.messagingErrorCode, resp.exception.message)
+                            tokens[index].take(10) + "...", errorCode, resp.exception.message)
+                        
+                        // Production-ready Cleanup: Remove dead tokens immediately
+                        if (errorCode == "UNREGISTERED" || errorCode == "INVALID_ARGUMENT") {
+                            logger.warn("FCM Provider: Removing dead token: {}", tokens[index].take(10) + "...")
+                            try {
+                                deviceTokenRepository.deleteByToken(tokens[index])
+                            } catch (e: Exception) {
+                                logger.error("FCM Provider: Failed to delete stale token", e)
+                            }
+                        }
                     }
                 }
             }

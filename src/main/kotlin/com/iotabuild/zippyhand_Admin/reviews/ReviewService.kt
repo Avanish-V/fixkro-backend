@@ -20,6 +20,16 @@ data class ReviewResponse(
     val createdAt: LocalDateTime
 )
 
+// Mobile client-facing review model matching the client's Review data class
+data class CustomerReviewResponse(
+    val id: String,
+    val userName: String,
+    val userImage: String,
+    val rating: Double,
+    val date: String,
+    val comment: String
+)
+
 data class CreateReviewRequest(
     val productId: Long,
     val orderId: Long,
@@ -76,6 +86,24 @@ class ReviewService(
                 impressions = review.impressions,
                 comment = review.comment,
                 createdAt = review.createdAt
+            )
+        }
+    }
+
+    /**
+     * Returns reviews in the mobile client format for a given product.
+     * Maps customerName to userName and generates a ui-avatars URL for userImage.
+     */
+    fun getCustomerReviewsByProduct(productId: Long): List<CustomerReviewResponse> {
+        return reviewRepository.findByProductId(productId).map { review ->
+            val encodedName = review.customerName.trim().replace(" ", "+")
+            CustomerReviewResponse(
+                id = review.id.toString(),
+                userName = review.customerName,
+                userImage = "https://ui-avatars.com/api/?name=$encodedName&background=2563EB&color=fff&size=128",
+                rating = review.rating.toDouble(),
+                date = review.createdAt.toLocalDate().toString(),
+                comment = review.comment
             )
         }
     }

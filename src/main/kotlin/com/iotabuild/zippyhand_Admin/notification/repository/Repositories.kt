@@ -23,6 +23,12 @@ interface TemplateRepository : JpaRepository<Template, String> {
 @Repository
 interface DeviceTokenRepository : JpaRepository<DeviceToken, UUID> {
     fun findByUserId(userId: String): List<DeviceToken>
+    fun findByToken(token: String): DeviceToken?
+    
+    @org.springframework.transaction.annotation.Transactional
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("DELETE FROM DeviceToken d WHERE d.token = :token")
+    fun deleteByToken(token: String)
 }
 
 @Repository

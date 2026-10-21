@@ -45,8 +45,24 @@ class NotificationController(
 
     @PostMapping("/devices/{userId}")
     fun registerDevice(@PathVariable userId: String, @Valid @RequestBody request: RegisterDeviceRequest): ResponseEntity<DeviceToken> {
-        val device = DeviceToken(userId = userId, token = request.token, platform = request.platform)
-        deviceTokenRepository.save(device)
+        val existingToken = deviceTokenRepository.findByToken(request.token)
+        
+        val device = if (existingToken != null) {
+            // Update existing record
+            val updated = DeviceToken(
+                id = existingToken.id,
+                userId = userId,
+                token = request.token,
+                platform = request.platform,
+                lastActive = java.time.Instant.now()
+            )
+            deviceTokenRepository.save(updated)
+        } else {
+            // Create new record
+            val newDevice = DeviceToken(userId = userId, token = request.token, platform = request.platform)
+            deviceTokenRepository.save(newDevice)
+        }
+        
         return ResponseEntity.ok(device)
     }
 }

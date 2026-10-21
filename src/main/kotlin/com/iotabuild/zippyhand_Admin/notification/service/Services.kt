@@ -101,7 +101,13 @@ class NotificationService(
             }
         }
 
-        notification.status = if (delivered) NotificationStatus.DELIVERED else NotificationStatus.FAILED
+        notification.status = if (delivered) {
+            NotificationStatus.DELIVERED
+        } else {
+            notification.retryCount++
+            if (notification.retryCount < 3) NotificationStatus.RETRYING else NotificationStatus.FAILED
+        }
+        
         notification.updatedAt = Instant.now()
         notificationRepository.save(notification)
     }

@@ -20,6 +20,16 @@ class ReviewController(private val reviewService: ReviewService) {
         return ApiResponse.success(reviewService.getReviewsByProduct(productId))
     }
 
+    /**
+     * Customer-facing endpoint that returns reviews in the mobile client format.
+     * Matches the client's Review data class: id, userName, userImage, rating (Double), date, comment.
+     * Publicly accessible — no authentication required.
+     */
+    @GetMapping("/product/{productId}/client")
+    fun getCustomerReviewsByProduct(@PathVariable productId: Long): ApiResponse<List<CustomerReviewResponse>> {
+        return ApiResponse.success(reviewService.getCustomerReviewsByProduct(productId))
+    }
+
     @PostMapping
     fun createReview(@RequestBody request: CreateReviewRequest): ApiResponse<ReviewResponse> {
         log.info("Received request to create review: {}", request)
