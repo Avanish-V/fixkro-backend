@@ -2,8 +2,10 @@ package com.iotabuild.zippyhand_Admin.products.controller
 
 import com.iotabuild.zippyhand_Admin.common.response.ApiResponse
 import com.iotabuild.zippyhand_Admin.products.dto.CategoryResponse
+import com.iotabuild.zippyhand_Admin.products.dto.HomeResponse
 import com.iotabuild.zippyhand_Admin.products.dto.ProductResponse
 import com.iotabuild.zippyhand_Admin.products.service.CustomerProductService
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -11,6 +13,11 @@ import org.springframework.web.bind.annotation.*
 class CustomerProductController(
     private val customerProductService: CustomerProductService
 ) {
+    @GetMapping("/home")
+    suspend fun getHome(): ResponseEntity<HomeResponse>{
+        val response = customerProductService.getHome()
+        return ResponseEntity.ok(response)
+    }
 
     @GetMapping("/categories")
     fun getAllCategories(): ApiResponse<List<CategoryResponse>> {

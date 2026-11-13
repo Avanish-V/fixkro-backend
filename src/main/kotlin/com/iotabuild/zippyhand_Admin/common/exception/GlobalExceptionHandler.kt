@@ -44,12 +44,11 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception::class)
     fun handleUnknown(ex: Exception): ResponseEntity<ApiResponse<Nothing>> {
-        log.error("Unhandled exception occurred: ${ex.message}", ex)
-        ex.printStackTrace()
+        log.error("Unhandled exception occurred: {}", ex.message, ex)
 
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(ApiResponse.Companion.error(ex.message ?: "Something went wrong", ErrorCode.INTERNAL))
+            .body(ApiResponse.Companion.error("An unexpected error occurred", ErrorCode.INTERNAL))
     }
 
     @ExceptionHandler(NoSuchElementException::class)
@@ -72,8 +71,4 @@ class GlobalExceptionHandler {
             .status(HttpStatus.BAD_REQUEST)
             .body(ApiResponse.Companion.error(ex.message ?: "Invalid operation"))
     }
-
 }
-
-class OrderNotFoundException(orderId: Long) :
-    RuntimeException("Order not found with id=$orderId")

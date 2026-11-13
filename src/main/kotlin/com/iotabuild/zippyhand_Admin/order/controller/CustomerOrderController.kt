@@ -5,6 +5,7 @@ import com.iotabuild.zippyhand_Admin.common.response.ApiResponse
 import com.iotabuild.zippyhand_Admin.order.dto.*
 import com.iotabuild.zippyhand_Admin.order.service.CustomerOrderService
 import com.iotabuild.zippyhand_Admin.order.service.OrderQueryService
+import com.iotabuild.zippyhand_Admin.payment.dto.PaymentStatusResponse
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -44,6 +45,22 @@ class CustomerOrderController(
         pageable: Pageable
     ): ApiResponse<Page<OrderResponse>> {
         return ApiResponse.success(queryService.getOrdersByCustomer(token.uid, pageable))
+    }
+
+    @GetMapping("/{orderId}/payment")
+    fun getOrderPayment(
+        @AuthenticationPrincipal token: FirebaseToken,
+        @PathVariable orderId: Long
+    ): ApiResponse<OrderPaymentResponse> {
+        return ApiResponse.success(customerOrderService.getOrderPayment(token, orderId))
+    }
+
+    @GetMapping("/{orderId}/payment-status")
+    fun getOrderPaymentStatus(
+        @AuthenticationPrincipal token: FirebaseToken,
+        @PathVariable orderId: Long
+    ): ApiResponse<com.iotabuild.zippyhand_Admin.payment.dto.PaymentCheckStatusResponse> {
+        return ApiResponse.success(customerOrderService.checkOrderPaymentStatus(token, orderId))
     }
 
     @PostMapping("/{orderId}/cancel")

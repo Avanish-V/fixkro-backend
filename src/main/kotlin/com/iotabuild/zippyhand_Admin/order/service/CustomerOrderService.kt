@@ -2,37 +2,34 @@ package com.iotabuild.zippyhand_Admin.order.service
 
 import com.google.firebase.auth.FirebaseToken
 import com.iotabuild.zippyhand_Admin.address.service.AddressService
-import com.iotabuild.zippyhand_Admin.payment.service.PaymentService
-import com.iotabuild.zippyhand_Admin.pricing.service.PricingService
-import com.iotabuild.zippyhand_Admin.products.repository.ProductRepository
+import com.iotabuild.zippyhand_Admin.jobs.service.PartnerJobService
 import com.iotabuild.zippyhand_Admin.order.dto.*
 import com.iotabuild.zippyhand_Admin.order.entity.*
+import com.iotabuild.zippyhand_Admin.order.repository.OrderPaymentRepository
 import com.iotabuild.zippyhand_Admin.order.repository.OrderRepository
+import com.iotabuild.zippyhand_Admin.payment.service.PaymentService
 import com.iotabuild.zippyhand_Admin.pricing.dto.PriceRequest
-import com.iotabuild.zippyhand_Admin.jobs.repository.JobAssignmentRepository
-import com.iotabuild.zippyhand_Admin.notification.dto.SendNotificationRequest
-import com.iotabuild.zippyhand_Admin.notification.model.DeliveryStrategy
-import com.iotabuild.zippyhand_Admin.notification.service.NotificationService
+import com.iotabuild.zippyhand_Admin.pricing.service.PricingService
+import com.iotabuild.zippyhand_Admin.products.service.ProductQueryService
 import org.slf4j.LoggerFactory
 import org.springframework.security.access.AccessDeniedException
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
-import java.util.concurrent.CompletableFuture
-import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import kotlin.random.Random
 
 @Service
 class CustomerOrderService(
     private val orderRepository: OrderRepository,
+    private val orderPaymentRepository: OrderPaymentRepository,
     private val addressService: AddressService,
     private val paymentService: PaymentService,
-    private val productRepository: ProductRepository,
+    private val productQueryService: ProductQueryService,
     private val pricingService: PricingService,
     private val queryService: OrderQueryService,
-    private val jobAssignmentRepository: JobAssignmentRepository,
-    private val notificationService: NotificationService
+    private val partnerJobService: PartnerJobService
 ) {
     private val logger = LoggerFactory.getLogger(CustomerOrderService::class.java)
 
@@ -52,29 +49,48 @@ class CustomerOrderService(
             )
         )
 
-        val product = productRepository.findById(request.productId)
-            .orElseThrow { RuntimeException("Product not found") }
-
+        val product = productQueryService.getProduct(request.productId)
         val address = addressService.getAddressById(token, request.addressId)
+        val paymentMode = request.paymentMode ?: PaymentMode.UPI
 
+        // 1. Create payment gateway session with Cashfree
         val paymentSession = paymentService.createCashfreeSession(
             orderId = cfOrderId,
             amount = pricingDetails.totalPrice.toDouble(),
             customerName = address.fullName,
             customerEmail = token.email ?: "customer@example.com",
-            customerPhone = address.phone
+            customerPhone = address.phone,
+            paymentMode = paymentMode.name
         )
 
+        // 2. Maintain separate orders_payment entity storing all payment information
+        val orderPayment = OrderPayment(
+            orderId = cfOrderId,
+            cfOrderId = paymentSession.cfOrderId,
+            paymentSessionId = paymentSession.paymentSessionId,
+            amount = pricingDetails.totalPrice.toInt(),
+            currency = paymentSession.currency,
+            paymentStatus = PaymentStatus.PENDING,
+            paymentMode = paymentMode,
+            customerName = address.fullName,
+            customerPhone = address.phone,
+            customerEmail = token.email ?: "customer@example.com",
+            createdAt = LocalDateTime.now(),
+            updatedAt = LocalDateTime.now()
+        )
+
+        // 3. Maintain Orders table and map that order with payment information via @OneToOne
         val order = OrderEntity(
             customerId = token.uid,
             orderId = cfOrderId,
+            payment = orderPayment, // Maps to orders_payment table
+            paymentStatus = PaymentStatus.PENDING,
+            paymentMode = paymentMode,
             totalAmount = pricingDetails.totalPrice.toInt(),
             productId = request.productId,
             productTitle = product.title,
-            productImage = product.image,
+            productImage = product.imageUrl,
             discount = pricingDetails.discount.toInt(),
-            paymentStatus = PaymentStatus.PENDING,
-            paymentMode = PaymentMode.UPI,
             scheduledAt = parseSchedule(request.serviceSchedule),
             price = pricingDetails.basePrice.toInt(),
             tax = pricingDetails.taxAmount.toInt(),
@@ -82,20 +98,24 @@ class CustomerOrderService(
             fullName = address.fullName,
             phone = address.phone,
             addressLine1 = address.addressLine1,
-            addressLine2 = address.addressLine2,
             city = address.city,
             state = address.state,
             postalCode = address.postalCode,
         )
 
         val savedOrder = orderRepository.save(order)
+        val savedPayment = savedOrder.payment
+
+        logger.info("Order {} and mapped orders_payment {} created successfully", savedOrder.orderId, savedPayment?.id)
 
         return CreateOrderResponse(
             orderId = savedOrder.orderId,
             cfOrderId = paymentSession.cfOrderId,
             paymentSessionId = paymentSession.paymentSessionId,
             status = savedOrder.status,
-            totalAmount = savedOrder.totalAmount
+            totalAmount = savedOrder.totalAmount,
+            paymentId = savedPayment?.id,
+            payment = savedPayment?.toResponse()
         )
     }
 
@@ -113,45 +133,44 @@ class CustomerOrderService(
 
         order.status = OrderStatus.CANCELLED
         order.cancellationReason = reason
-        val savedOrder = orderRepository.save(order)
-
-        // Cancel all associated job assignments
-        val assignments = jobAssignmentRepository.findAllByOrderId(order.orderId)
-        assignments.forEach { assignment ->
-            // Allow cancellation if the job hasn't been completed or already rejected/cancelled
-            if (assignment.status == "PENDING" || assignment.status == "ACCEPTED" || assignment.status == "IN_PROGRESS") {
-                val isUrgent = assignment.status != "PENDING" // They accepted it, meaning they might be traveling!
-                assignment.status = "CANCELLED"
-                jobAssignmentRepository.save(assignment)
-
-                // Notify technician asynchronously to avoid blocking the customer cancellation flow
-                CompletableFuture.runAsync {
-                    try {
-                        notificationService.enqueue(
-                            SendNotificationRequest(
-                                userId = assignment.uid,
-                                idempotencyKey = "cancel_${order.orderId}_${assignment.uid}_${System.currentTimeMillis()}", // Break exact idempotency if retried to force delivery
-                                strategy = if (isUrgent) DeliveryStrategy.MULTI_CHANNEL else DeliveryStrategy.SINGLE_CHANNEL, // Alert everywhere if urgent
-                                templateId = "JOB_CANCELLED_BY_CUSTOMER",
-                                payload = mapOf(
-                                    "orderId" to order.orderId,
-                                    "productTitle" to order.productTitle,
-                                    "reason" to (reason ?: "User requested cancellation"),
-                                    "urgent" to isUrgent
-                                )
-                            ),
-                            // If urgent (already accepted), process it synchronously WITHIN this background thread
-                            // to bypass Kafka lag and deliver it instantly via Firebase.
-                            sync = isUrgent
-                        )
-                    } catch (e: Exception) {
-                        logger.error("Failed to notify technician ${assignment.uid} about cancellation of ${order.orderId}: ${e.message}")
-                    }
-                }
+        order.payment?.let { payment ->
+            if (payment.paymentStatus == PaymentStatus.PENDING) {
+                payment.paymentStatus = PaymentStatus.CANCELLED
+                payment.updatedAt = LocalDateTime.now()
             }
         }
+        val savedOrder = orderRepository.save(order)
+
+        // Delegate job assignment cancellation and notification to PartnerJobService
+        partnerJobService.cancelAssignmentsForOrder(
+            orderId = order.orderId,
+            reason = reason,
+            isCustomerCancellation = true,
+            productTitle = order.productTitle
+        )
         
         return queryService.getOrder(savedOrder.id)
+    }
+
+    @Transactional(readOnly = true)
+    fun getOrderPayment(token: FirebaseToken, orderId: Long): OrderPaymentResponse {
+        val order = orderRepository.findById(orderId).orElseThrow { RuntimeException("Order not found") }
+        if (order.customerId != token.uid) {
+            throw AccessDeniedException("Access Denied")
+        }
+        val payment = order.payment
+            ?: orderPaymentRepository.findByOrderId(order.orderId)
+                .orElseThrow { RuntimeException("Payment information not found in orders_payment for order: ${order.orderId}") }
+        return payment.toResponse()
+    }
+
+    @Transactional(readOnly = true)
+    fun checkOrderPaymentStatus(token: FirebaseToken, orderId: Long): com.iotabuild.zippyhand_Admin.payment.dto.PaymentCheckStatusResponse {
+        val order = orderRepository.findById(orderId).orElseThrow { RuntimeException("Order not found") }
+        if (order.customerId != token.uid) {
+            throw AccessDeniedException("Access Denied")
+        }
+        return paymentService.checkPaymentStatus(order.orderId)
     }
 
     private fun parseSchedule(scheduleStr: String): LocalDateTime {
@@ -172,7 +191,6 @@ class CustomerOrderService(
         }
         
         logger.error("Failed to parse schedule date: {}", scheduleStr)
-        // Fallback to now if parsing fails, but ideally we should throw an error
         return LocalDateTime.now().plusDays(1) 
     }
 }

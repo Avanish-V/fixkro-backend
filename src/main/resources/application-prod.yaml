@@ -35,6 +35,10 @@ cashfree:
   secret-key: ${CASHFREE_SECRET_KEY:dummy}
   api-version: 2023-08-01
   environment: PROD
+  # Cashfree POSTs payment success/failure events here — must be publicly reachable
+  notify-url: ${CASHFREE_NOTIFY_URL:https://api.fixkro.in/api/v1/payment/webhook}
+  # Cashfree redirects the in-app WebView here after payment — use a deep-link so the app handles it
+  return-url: ${CASHFREE_RETURN_URL:fixkro://payment/result}
 
 logging:
   level:

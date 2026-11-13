@@ -9,4 +9,5 @@ import java.util.Optional
 interface PaymentRepository : JpaRepository<Payment, Long> {
     fun findByOrderId(orderId: String): Optional<Payment>
     fun findByCfOrderId(cfOrderId: String): Optional<Payment>
+    fun findByPaymentSessionId(paymentSessionId: String): Optional<Payment>
 }

@@ -1,1 +1,1 @@
-rootProject.name = "zippyhand-Admin"
+rootProject.name = "fixkro-backend"

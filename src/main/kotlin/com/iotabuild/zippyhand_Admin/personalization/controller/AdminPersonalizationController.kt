@@ -13,14 +13,10 @@ class AdminPersonalizationController(
 ) {
 
     @GetMapping("/banner")
-    fun getActiveBanner(): ApiResponse<BannerDto?> {
-        return ApiResponse.success(personalizationService.getActiveBanner())
+    fun getActiveBanner(): ApiResponse<String?> {
+        return ApiResponse.success(personalizationService.getActiveBannerUrl())
     }
 
-    @GetMapping("/banners")
-    fun getAllBanners(): ApiResponse<List<BannerDto>> {
-        return ApiResponse.success(personalizationService.getAllBanners())
-    }
 
     @PostMapping("/banner")
     fun updateBanner(@RequestBody request: UpdateBannerRequest): ApiResponse<BannerDto> {
@@ -43,8 +39,4 @@ class AdminPersonalizationController(
         return ApiResponse.success("Banner deleted successfully")
     }
 
-    @GetMapping("/home-preview")
-    fun getHomePreview(): ApiResponse<HomeResponse> {
-        return ApiResponse.success(personalizationService.getHomeData())
-    }
 }

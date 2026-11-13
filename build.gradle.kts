@@ -33,6 +33,9 @@ dependencies {
 	testImplementation("org.springframework.security:spring-security-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor") // needed for suspend controllers
+
     implementation("org.postgresql:postgresql:42.7.7")
     implementation("com.google.firebase:firebase-admin:9.4.3")
 

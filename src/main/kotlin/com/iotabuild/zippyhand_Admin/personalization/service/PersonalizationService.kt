@@ -13,39 +13,11 @@ import java.time.LocalDateTime
 @Service
 class PersonalizationService(
     private val bannerRepository: BannerRepository,
-    private val customerProductService: CustomerProductService,
     private val storageService: StorageService
 ) {
 
     fun getActiveBannerUrl(): String {
         return bannerRepository.findFirstByIsActiveTrueOrderByDisplayOrderAscUpdatedAtDesc()?.imageUrl ?: ""
-    }
-
-    fun getHomeData(): HomeResponse {
-        val bannerUrl = getActiveBannerUrl()
-        val categories = customerProductService.getAllCategories().map { cat ->
-            HomeCategoryDto(
-                categoryId = cat.categoryId,
-                title = cat.title,
-                image = if (!cat.image.isNullOrBlank()) cat.image else cat.iconValue,
-                iconType = cat.iconType,
-                iconValue = cat.iconValue,
-                themeColor = cat.themeColor,
-                status = cat.status
-            )
-        }
-        return HomeResponse(
-            banner = bannerUrl,
-            categories = categories
-        )
-    }
-
-    fun getActiveBanner(): BannerDto? {
-        return bannerRepository.findFirstByIsActiveTrueOrderByDisplayOrderAscUpdatedAtDesc()?.let { toDto(it) }
-    }
-
-    fun getAllBanners(): List<BannerDto> {
-        return bannerRepository.findAllByOrderByDisplayOrderAscUpdatedAtDesc().map { toDto(it) }
     }
 
     @Transactional

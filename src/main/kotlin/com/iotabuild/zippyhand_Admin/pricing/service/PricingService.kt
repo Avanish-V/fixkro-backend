@@ -6,7 +6,7 @@ import com.iotabuild.zippyhand_Admin.pricing.dto.PriceRequest
 import com.iotabuild.zippyhand_Admin.pricing.exception.InvalidOfferException
 import com.iotabuild.zippyhand_Admin.pricing.exception.PricingCalculationException
 import com.iotabuild.zippyhand_Admin.pricing.exception.ProductNotFoundException
-import com.iotabuild.zippyhand_Admin.products.repository.ProductRepository
+import com.iotabuild.zippyhand_Admin.products.service.ProductQueryService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
@@ -17,7 +17,7 @@ import java.math.RoundingMode
  */
 @Service
 class PricingService(
-    private val productRepository: ProductRepository,
+    private val productQueryService: ProductQueryService,
     private val pricingConfig: PricingConfig,
     private val offerQueryService: OfferQueryService
 ) {
@@ -28,8 +28,6 @@ class PricingService(
      * Calculate final price for a product including tax and discounts
      */
     fun calculateFinalPrice(request: PriceRequest): PriceDetailResponse {
-        // Production Ready: Sanitize input by coercing to a valid range if strictly necessary, 
-        // but prefer throwing clear validation errors.
         if (request.quantity > 5) {
             logger.warn("Received excessive quantity: {}. Restricting to maximum of 5.", request.quantity)
         }
@@ -42,8 +40,11 @@ class PricingService(
             request.productId, sanitizedQuantity, request.offerCode ?: "NONE")
         
         try {
-            val product = productRepository.findById(request.productId)
-                .orElseThrow { ProductNotFoundException(request.productId) }
+            val product = try {
+                productQueryService.getProduct(request.productId)
+            } catch (e: NoSuchElementException) {
+                throw ProductNotFoundException(request.productId)
+            }
             
             val unitPrice = BigDecimal(product.price.toString())
             val basePrice = unitPrice.multiply(BigDecimal(sanitizedQuantity))
@@ -83,7 +84,7 @@ class PricingService(
     }
     
     private fun calculateTax(basePrice: BigDecimal): BigDecimal {
-        val rate = pricingConfig.taxRate ?: BigDecimal.ZERO
+        val rate = pricingConfig.taxRate
         return basePrice.multiply(rate)
             .divide(BigDecimal("100"), 2, RoundingMode.HALF_UP)
     }

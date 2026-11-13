@@ -61,14 +61,18 @@ class OrderEntity(
     @Column(nullable = false)
     var status: OrderStatus = OrderStatus.CREATED,
 
-    /* ---------- PAYMENT INFO ---------- */
+    /* ---------- PAYMENT INFO (MAPPED TO orders_payment TABLE) ---------- */
+
+    @OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.EAGER)
+    @JoinColumn(name = "payment_id", referencedColumnName = "id")
+    var payment: OrderPayment? = null,
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     var paymentStatus: PaymentStatus = PaymentStatus.PENDING,
 
     @Enumerated(EnumType.STRING)
-    val paymentMode: PaymentMode = PaymentMode.UPI,
+    var paymentMode: PaymentMode = PaymentMode.UPI,
 
     /* ---------- TIMESTAMPS ---------- */
 
@@ -112,7 +116,8 @@ enum class PaymentStatus {
     PENDING,
     PAID,
     FAILED,
-    REFUNDED
+    REFUNDED,
+    CANCELLED
 }
 
 enum class PaymentMode {

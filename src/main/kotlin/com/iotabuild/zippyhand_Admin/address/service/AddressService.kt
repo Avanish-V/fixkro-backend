@@ -21,7 +21,6 @@ class AddressService(private val addressRepository: AddressRepository) {
                 fullName = addressRequest.fullName,
                 phone = addressRequest.phone,
                 addressLine1 = addressRequest.addressLine1,
-                addressLine2 = addressRequest.addressLine2,
                 city = addressRequest.city,
                 state = addressRequest.state,
                 postalCode = addressRequest.postalCode,

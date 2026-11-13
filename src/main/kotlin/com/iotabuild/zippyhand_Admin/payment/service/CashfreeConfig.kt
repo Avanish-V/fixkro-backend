@@ -12,6 +12,13 @@ class CashfreeConfig {
     var secretKey: String = ""
     var environment: String = "sandbox"
     var apiVersion: String = "2023-08-01"
+    /** Cashfree redirects the user here after payment completes.
+     *  Use a deep-link (fixkro://payment/result) so the Android app intercepts it
+     *  instead of opening a browser/WebView that shows a 404 page.
+     *  Override via CASHFREE_RETURN_URL env var or cashfree.return-url in YAML. */
+    var returnUrl: String = "fixkro://payment/result"
+    /** Cashfree POSTs payment webhook events here — must be publicly reachable (use ngrok in dev) */
+    var notifyUrl: String = ""
 
     fun getBaseUrl(): String {
         return if (environment.lowercase() in listOf("production", "prod")) {

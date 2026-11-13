@@ -28,7 +28,7 @@ class SecurityConfig(
             .authorizeHttpRequests { auth ->
                 auth
                     // 1. PUBLIC ENDPOINTS
-                    .requestMatchers("/api/v1/payments/webhook").permitAll()
+                    .requestMatchers("/api/v1/payment/webhook", "/api/v1/payments/webhook").permitAll()
                     .requestMatchers("/api/v1/payments/health").permitAll()
                     .requestMatchers("/api/v1/auth/**").permitAll() // Supabase Login
                     .requestMatchers("/api/v1/cities/active").permitAll()
@@ -43,7 +43,8 @@ class SecurityConfig(
                     .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/home").permitAll()
                     .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/personalization/**").permitAll()
                     .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/service-availability/**").permitAll()
-                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/reviews/product/*/client").permitAll()
+                    // Client (mobile app) review endpoints: GET is public, POST requires USER auth
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/client/reviews/**").permitAll()
                     
                     // 2. ADMIN ENDPOINTS (Supabase Auth -> ROLE_ADMIN)
                     .requestMatchers("/api/v1/admin/personalization/**").hasRole("ADMIN")
@@ -74,7 +75,10 @@ class SecurityConfig(
                     .requestMatchers("/api/v1/partners/**").hasRole("USER")
                     .requestMatchers("/api/v1/addresses/**").hasRole("USER")
                     .requestMatchers("/api/v1/pricing/**").hasRole("USER")
+                    .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/client/reviews").hasRole("USER")
                     .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/order").hasRole("USER")
+                    .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/payment/retry").hasRole("USER")
+                    .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/payment/verify").hasRole("USER")
                     .requestMatchers("/api/v1/order/my-orders").hasRole("USER")
                     .requestMatchers("/api/v1/order/*/cancel").hasRole("USER")
                     

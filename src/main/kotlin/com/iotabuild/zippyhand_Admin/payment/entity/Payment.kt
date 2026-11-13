@@ -4,35 +4,42 @@ import jakarta.persistence.*
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "payments")
+@Table(name = "payments", indexes = [
+    Index(name = "idx_payments_order_id", columnList = "orderId"),
+    Index(name = "idx_payments_cf_order_id", columnList = "cfOrderId"),
+    Index(name = "idx_payments_status", columnList = "paymentStatus")
+])
 class Payment(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long = 0,
 
     @Column(nullable = false, unique = true)
-    val orderId: String,
+    var orderId: String = "",
 
-    @Column(nullable = false, unique = true)
-    val cfOrderId: String,
+    @Column(nullable = true, unique = true)
+    var cfOrderId: String? = null,
 
     @Column
     var cfPaymentId: String? = null,
 
-    @Column(nullable = false)
-    val customerName: String,
+    @Column
+    var paymentSessionId: String? = null,
 
     @Column(nullable = false)
-    val customerPhone: String,
+    var customerName: String = "",
 
     @Column(nullable = false)
-    val customerEmail: String,
+    var customerPhone: String = "",
 
     @Column(nullable = false)
-    val amount: Int,
+    var customerEmail: String = "",
 
     @Column(nullable = false)
-    val currency: String = "INR",
+    var amount: Int = 0,
+
+    @Column(nullable = false)
+    var currency: String = "INR",
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -54,7 +61,7 @@ class Payment(
     var paymentGatewayDetails: String? = null,
 
     @Column(length = 500)
-    val returnUrl: String,
+    var returnUrl: String? = null,
 
     @Column(length = 1000)
     var webhookData: String? = null,
@@ -63,7 +70,12 @@ class Payment(
     val createdAt: LocalDateTime = LocalDateTime.now(),
 
     var updatedAt: LocalDateTime = LocalDateTime.now()
-)
+) {
+    @PreUpdate
+    fun onUpdate() {
+        updatedAt = LocalDateTime.now()
+    }
+}
 
 enum class PaymentStatus {
     PENDING,

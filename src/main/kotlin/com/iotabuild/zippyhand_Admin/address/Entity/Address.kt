@@ -17,23 +17,16 @@ data class Address(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
-
     val userId: String,
-
     val fullName: String,
     val phone: String,
-
     val addressLine1: String,
-    val addressLine2: String?,
-
     val city: String,
     val state: String,
+    val isDeleted: Boolean = false,
     val postalCode: String,
-
     val addressType: AddressType = AddressType.OTHER,
-
     val isDefault: Boolean = false,
-
     val createdAt: Instant = Instant.now(),
     val updatedAt: Instant = Instant.now(),
     val deletedAt: Instant? = null

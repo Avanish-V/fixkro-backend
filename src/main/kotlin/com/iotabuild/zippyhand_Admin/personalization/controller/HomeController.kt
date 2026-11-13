@@ -14,21 +14,8 @@ class HomeController(
     private val personalizationService: PersonalizationService
 ) {
 
-    /**
-     * Mobile Home endpoint returning banner and categories.
-     * Maps to HomeResponse directly to match mobile client @Serializable data class HomeResponse.
-     */
-    @GetMapping("/home")
-    fun getHome(): HomeResponse {
-        return personalizationService.getHomeData()
-    }
-
-
-    /**
-     * Optional public endpoint to fetch active banner directly
-     */
     @GetMapping("/personalization/banner")
-    fun getActiveBanner(): ApiResponse<BannerDto?> {
-        return ApiResponse.success(personalizationService.getActiveBanner())
+    fun getActiveBanner(): ApiResponse<String?> {
+        return ApiResponse.success(personalizationService.getActiveBannerUrl())
     }
 }

@@ -26,6 +26,11 @@ data class VerifyPaymentRequest(
     val orderId: String
 )
 
+data class RetryPaymentRequest(
+    @field:NotBlank(message = "Order ID is required")
+    val orderId: String
+)
+
 data class UpdatePaymentStatusRequest(
     @field:NotNull(message = "Order ID is required")
     val orderId: Long,
@@ -63,23 +68,45 @@ data class PaymentOrderResponse(
     val cfOrderId: String,
     val paymentSessionId: String,
     val orderAmount: Int,
-    val currency: String = "INR"
+    val currency: String = "INR",
+    val paymentId: Long? = null
 )
 
 data class PaymentStatusResponse(
+    val id: Long? = null,
     val orderId: String,
-    val cfOrderId: String,
-    val cfPaymentId: String?,
+    val cfOrderId: String? = null,
+    val cfPaymentId: String? = null,
+    val paymentSessionId: String? = null,
     val paymentStatus: com.iotabuild.zippyhand_Admin.payment.entity.PaymentStatus,
     val amount: Int,
-    val currency: String,
-    val paymentMode: String?,
-    val paymentMessage: String?,
-    val bankReference: String?,
-    val paymentTime: java.time.LocalDateTime?,
-    val createdAt: java.time.LocalDateTime,
-    val updatedAt: java.time.LocalDateTime
+    val currency: String = "INR",
+    val paymentMode: String? = null,
+    val paymentMessage: String? = null,
+    val bankReference: String? = null,
+    val paymentTime: java.time.LocalDateTime? = null,
+    val createdAt: java.time.LocalDateTime = java.time.LocalDateTime.now(),
+    val updatedAt: java.time.LocalDateTime = java.time.LocalDateTime.now()
 )
+
+fun com.iotabuild.zippyhand_Admin.payment.entity.Payment.toStatusResponse(): PaymentStatusResponse {
+    return PaymentStatusResponse(
+        id = this.id,
+        orderId = this.orderId,
+        cfOrderId = this.cfOrderId,
+        cfPaymentId = this.cfPaymentId,
+        paymentSessionId = this.paymentSessionId,
+        paymentStatus = this.paymentStatus,
+        amount = this.amount,
+        currency = this.currency,
+        paymentMode = this.paymentMode,
+        paymentMessage = this.paymentMessage,
+        bankReference = this.bankReference,
+        paymentTime = this.paymentTime,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt
+    )
+}
 
 data class PaymentVerificationResponse(
     val success: Boolean,
@@ -91,53 +118,93 @@ data class PaymentVerificationResponse(
 
 /* ---------- CASHFREE API RESPONSE DTOs ---------- */
 
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 data class CashfreeOrderResponse(
-    val cf_order_id: String,
-    val order_id: String,
-    val entity: String,
-    val order_currency: String,
-    val order_amount: Double,
-    val order_status: String,
-    val payment_session_id: String,
+    val cf_order_id: Any? = null,
+    val order_id: String = "",
+    val entity: String = "order",
+    val order_currency: String = "INR",
+    val order_amount: Double = 0.0,
+    val order_status: String = "",
+    val payment_session_id: String = "",
     val order_token: String? = null
-)
+) {
+    fun getCfOrderIdStr(): String = cf_order_id?.toString() ?: ""
+}
 
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 data class CashfreePaymentResponse(
-    val cf_payment_id: String,
-    val order_id: String,
-    val entity: String,
-    val payment_currency: String,
-    val payment_amount: Double,
-    val payment_time: String?,
-    val payment_status: String,
-    val payment_method: PaymentMethodDetails?,
-    val bank_reference: String?,
-    val payment_message: String?
-)
+    val cf_payment_id: Any? = null,
+    val order_id: String = "",
+    val entity: String = "payment",
+    val payment_currency: String = "INR",
+    val payment_amount: Double = 0.0,
+    val payment_time: String? = null,
+    val payment_status: String = "",
+    val payment_method: Any? = null,
+    val bank_reference: String? = null,
+    val payment_message: String? = null,
+    val payment_group: String? = null
+) {
+    fun getCfPaymentIdStr(): String? = cf_payment_id?.toString()
+}
 
 data class PaymentMethodDetails(
     val payment_method: String? = null
 )
 
+data class PaymentCheckStatusResponse(
+    val orderId: String,
+    val cfOrderId: String?,
+    val isPaid: Boolean,
+    val paymentStatus: com.iotabuild.zippyhand_Admin.order.entity.PaymentStatus,
+    val orderStatus: com.iotabuild.zippyhand_Admin.order.entity.OrderStatus,
+    val amount: Int,
+    val paymentMode: com.iotabuild.zippyhand_Admin.order.entity.PaymentMode?,
+    val cfPaymentId: String?,
+    val bankReference: String?,
+    val paymentTime: java.time.LocalDateTime?,
+    val message: String
+)
+
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
+data class CashfreeWebhookRoot(
+    val data: CashfreeWebhookData? = null,
+    val order: WebhookOrder? = null,
+    val payment: WebhookPayment? = null,
+    val type: String? = null,
+    val event_time: String? = null
+) {
+    /** Resolves order from nested data block (modern) or top-level (legacy) */
+    fun resolveOrder(): WebhookOrder? = data?.order ?: order
+    /** Resolves payment from nested data block (modern) or top-level (legacy) */
+    fun resolvePayment(): WebhookPayment? = data?.payment ?: payment
+}
+
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 data class CashfreeWebhookData(
-    val order: WebhookOrder?,
-    val payment: WebhookPayment?
+    val order: WebhookOrder? = null,
+    val payment: WebhookPayment? = null,
+    val customer_details: Map<String, Any>? = null
 )
 
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 data class WebhookOrder(
-    val order_id: String,
-    val order_amount: Double,
-    val order_currency: String,
-    val order_status: String
+    val order_id: String = "",
+    val order_amount: Double = 0.0,
+    val order_currency: String = "INR",
+    val order_status: String? = null
 )
 
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 data class WebhookPayment(
-    val cf_payment_id: String,
-    val payment_status: String,
-    val payment_amount: Double,
-    val payment_currency: String,
-    val payment_message: String?,
-    val payment_time: String?,
-    val bank_reference: String?,
-    val payment_method: Map<String, Any>?
+    val cf_payment_id: String? = null,
+    val payment_status: String = "",
+    val payment_amount: Double = 0.0,
+    val payment_currency: String = "INR",
+    val payment_message: String? = null,
+    val payment_time: String? = null,
+    val bank_reference: String? = null,
+    val payment_group: String? = null,
+    val payment_method: Any? = null
 )
